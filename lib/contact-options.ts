@@ -1,0 +1,16 @@
+export const SERVICE_OPTIONS = [
+  "Seguridad electrónica y videovigilancia con IA",
+  "Detección y supresión de incendios",
+  "Control de acceso y biometría",
+  "Automatización y Building Management Systems (BMS)",
+  "Aire acondicionado e ingeniería electromecánica",
+  "Electricidad",
+  "Cableado estructurado y fibra óptica",
+  "Redes GPON",
+  "Equipos de acceso, switches y firewalls",
+  "Telefonía IP y videoconferencia",
+  "Respaldo y energía fotovoltaica",
+  "Soluciones audiovisuales y multimedia",
+  "Proyectos especiales",
+  "Otro / no estoy seguro",
+] as const;
