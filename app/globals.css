@@ -29,6 +29,31 @@ h6 {
   letter-spacing: -0.01em;
 }
 
+.portal-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #07111f;
+  padding: 0.75rem 0.875rem;
+  color: #f5f7fa;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.portal-input::placeholder {
+  color: #64748b;
+}
+
+.portal-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.portal-input option {
+  background: #0a1626;
+}
+
 /* Border beam: segmento de luz que recorre el borde de una tarjeta.
    Requiere @property para interpolar el ángulo del conic-gradient. */
 @property --beam-angle {

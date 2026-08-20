@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { name: "Nosotros", link: "/#nosotros" },
   { name: "Servicios", link: "/servicios" },
   { name: "Proyectos", link: "/#proyectos" },
+  { name: "Portal", link: "/portal/iniciar-sesion" },
   { name: "Contacto", link: "/#contacto" },
 ];
 

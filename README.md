@@ -9,6 +9,7 @@ Sitio corporativo de **Nordictech El Salvador S.A. de C.V.** (nordictech-corp.co
 - **motion** (sucesor de Framer Motion) — animaciones. No usar `framer-motion` (paquete legado)
 - **lucide-react** — iconos (única librería de iconos del proyecto)
 - **Resend** — envío del formulario de contacto vía Server Action
+- **Endpoints PHP en Bluehost** — autenticación, tickets y persistencia del portal
 - **ESLint 9** + `eslint-config-next`
 - Deploy: **Vercel**
 
@@ -49,6 +50,10 @@ RESEND_API_KEY=
 # CONTACT_TO_EMAIL=info@nordictech-corp.com
 # CONTACT_FROM_EMAIL="Nordictech Web <onboarding@resend.dev>"
 ```
+
+El portal requiere la URL pública de los endpoints PHP y el secreto de sesión indicados
+en `.env.local.example`. Vercel no se conecta a MySQL: todas las operaciones pasan por
+Bluehost mediante `PORTAL_API_BASE_URL`.
 
 Sin `RESEND_API_KEY` el formulario de contacto falla de forma controlada (mensaje de error genérico, se loguea en servidor) — no hay mock/fallback silencioso.
 
@@ -98,6 +103,21 @@ Import alias: `@/*` → raíz del proyecto (ver `tsconfig.json`).
 | `/nosotros` | Perfil empresarial, misión/visión, valores, alianzas |
 | `/servicios` | Listado de las líneas de negocio |
 | `/servicios/[slug]` | Detalle de cada línea de negocio (slugs definidos en `lib/services.ts`) |
+| `/portal/iniciar-sesion` | Inicio de sesión del portal |
+| `/portal/registro` | Solicitud de cuenta con aprobación manual |
+| `/portal/recuperar` | Recuperación de contraseña por código |
+| `/portal` | Panel del cliente y creación/seguimiento de tickets |
+| `/portal/tecnico` | Panel de bitácora para técnicos |
+| `/portal/administracion` | Asignación y gestión administrativa de tickets |
+| `/portal/administracion/sistema` | Usuarios, roles, tickets y correos |
+
+## Portal de tickets
+
+El portal conserva los roles de la versión PHP: cliente (`1`), técnico (`2`) y
+administrador (`3`). Next.js funciona como interfaz y puente seguro hacia los endpoints
+de Bluehost; conserva `PHPSESSID` en una cookie HTTP-only del dominio desplegado y no
+expone las credenciales de MySQL. Las cuentas, recuperación, tickets, asignaciones,
+bitácoras, estados y correos continúan siendo procesados por el backend PHP existente.
 
 ## Formulario de contacto
 
@@ -114,7 +134,9 @@ Import alias: `@/*` → raíz del proyecto (ver `tsconfig.json`).
 
 ## Roadmap
 
-Fase 2 (futura, no implementada): portal de clientes con backend en **Supabase** (DB + Auth). No agregar dependencias de Supabase hasta confirmar el arranque de esa fase.
+Fase 2 implementada: portal de clientes, técnicos y administración consumiendo los
+endpoints PHP existentes en Bluehost. La aplicación de Vercel no contiene credenciales
+ni conexiones directas a la base MySQL.
 
 ## Documentos de referencia
 

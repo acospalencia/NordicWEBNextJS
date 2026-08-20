@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { name: "Nosotros", href: "/#nosotros" },
   { name: "Servicios", href: "/servicios" },
   { name: "Proyectos", href: "/#proyectos" },
+  { name: "Portal de clientes", href: "/portal/iniciar-sesion" },
   { name: "Contacto", href: "/#contacto" },
 ];
 
