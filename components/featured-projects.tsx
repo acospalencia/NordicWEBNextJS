@@ -15,8 +15,12 @@ import {
   X,
 } from "lucide-react";
 import { useOutsideClick } from "@/hooks/use-outside-click";
+import { cn } from "@/lib/utils";
 import { Reveal, RevealGroup, EASE } from "@/components/ui/reveal";
 import { HoverGlow } from "@/components/ui/hover-glow";
+
+// Cambiar a `false` para volver a mostrar y habilitar las cards de clientes.
+const BLUR_CLIENT_PROJECT_CARDS = true;
 
 const PROJECTS = [
   {
@@ -241,8 +245,19 @@ export function FeaturedProjects() {
               <motion.button
                 layoutId={`card-${project.name}-${id}`}
                 transition={{ layout: layoutTransition }}
-                onClick={() => setActive(project)}
-                className="group relative flex aspect-[3/4] w-full flex-col justify-end overflow-hidden rounded-lg border border-white/10 bg-[#0A1626] p-6 text-left transition-[border-color] duration-150 hover:border-[#3B82F6]/40"
+                onClick={() => {
+                  if (!BLUR_CLIENT_PROJECT_CARDS) setActive(project);
+                }}
+                disabled={BLUR_CLIENT_PROJECT_CARDS}
+                aria-label={
+                  BLUR_CLIENT_PROJECT_CARDS
+                    ? "Proyecto temporalmente oculto"
+                    : `Ver proyecto: ${project.name}`
+                }
+                className={cn(
+                  "group relative flex aspect-[3/4] w-full flex-col justify-end overflow-hidden rounded-lg border border-white/10 bg-[#0A1626] p-6 text-left transition-[border-color] duration-150 hover:border-[#3B82F6]/40",
+                  BLUR_CLIENT_PROJECT_CARDS && "cursor-default hover:border-white/10"
+                )}
               >
                 <HoverGlow
                   active={hoveredIndex === index}
@@ -252,7 +267,11 @@ export function FeaturedProjects() {
                 <motion.div
                   layoutId={`icon-${project.name}-${id}`}
                   transition={{ layout: layoutTransition }}
-                  className="absolute inset-0 [mask-image:linear-gradient(to_bottom,black_22%,rgba(0,0,0,0.8)_38%,rgba(0,0,0,0.5)_52%,rgba(0,0,0,0.25)_63%,rgba(0,0,0,0.08)_72%,transparent_80%)]"
+                  aria-hidden={BLUR_CLIENT_PROJECT_CARDS}
+                  className={cn(
+                    "absolute inset-0 [mask-image:linear-gradient(to_bottom,black_22%,rgba(0,0,0,0.8)_38%,rgba(0,0,0,0.5)_52%,rgba(0,0,0,0.25)_63%,rgba(0,0,0,0.08)_72%,transparent_80%)]",
+                    BLUR_CLIENT_PROJECT_CARDS && "scale-110 blur-2xl"
+                  )}
                 >
                   <Image
                     src={project.image}
@@ -266,7 +285,13 @@ export function FeaturedProjects() {
                   </div>
                 </motion.div>
 
-                <div className="relative">
+                <div
+                  aria-hidden={BLUR_CLIENT_PROJECT_CARDS}
+                  className={cn(
+                    "relative",
+                    BLUR_CLIENT_PROJECT_CARDS && "opacity-20 blur-2xl"
+                  )}
+                >
                   <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#60A5FA]">
                     {project.sector}
                   </span>
@@ -282,6 +307,13 @@ export function FeaturedProjects() {
                     <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
+
+                {BLUR_CLIENT_PROJECT_CARDS && (
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-20 rounded-lg bg-[#07111F]/55 backdrop-blur-2xl"
+                  />
+                )}
               </motion.button>
               </motion.div>
             );
