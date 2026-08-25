@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/portal/auth-forms";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 
 export const metadata: Metadata = {
-  title: "Iniciar sesión — Portal Nordictech",
+  title: "Tickets de Soporte — Nordictech",
   description: "Acceso al sistema corporativo de tickets de Nordictech.",
 };
 
@@ -18,9 +18,9 @@ export default async function PortalLoginPage() {
 
   return (
     <PortalAuthShell
-      eyebrow="Portal corporativo"
+      eyebrow="Tickets de Soporte"
       title="Ingreso al sistema de tickets"
-      description="Ingresá tus credenciales para consultar y gestionar solicitudes de soporte."
+      description="Gestiona tus solicitudes de soporte técnico de forma rápida y centralizada."
       footer={
         <div className="flex flex-col items-center gap-3 text-sm text-[#94A3B8] sm:flex-row sm:justify-between">
           <Link href="/portal/recuperar" className="transition-colors hover:text-white">

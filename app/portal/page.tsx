@@ -7,7 +7,7 @@ import { PortalApiSessionError } from "@/lib/portal/api";
 import { getClientTickets } from "@/lib/portal/data";
 import { PORTAL_ROLES } from "@/lib/portal/types";
 
-export const metadata: Metadata = { title: "Portal de clientes — Nordictech" };
+export const metadata: Metadata = { title: "Tickets de Soporte — Nordictech" };
 export const dynamic = "force-dynamic";
 
 export default async function ClientPortalPage() {

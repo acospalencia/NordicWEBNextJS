@@ -95,7 +95,13 @@ export function FloatingWhatsApp() {
 
             <div className="flex items-center gap-3 bg-[#0B1120] px-5 py-4">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#3B82F6]/15">
-                <Image src="/Logo.webp" alt="" width={22} height={22} className="size-[22px] object-contain" />
+                <Image
+                  src="/Logo-wordmark.webp"
+                  alt=""
+                  width={1563}
+                  height={248}
+                  className="h-auto w-7"
+                />
               </span>
               <div>
                 <p className="text-sm font-semibold text-[#F5F7FA]">Iniciá una conversación</p>

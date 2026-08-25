@@ -17,7 +17,7 @@ import {
 const NAV_ITEMS = [
   { name: "Nosotros", link: "/#nosotros" },
   { name: "Servicios", link: "/#servicios" },
-  { name: "Portal", link: "/portal/iniciar-sesion" },
+  { name: "Tickets de Soporte", link: "/portal/iniciar-sesion", featured: true },
   { name: "Contacto", link: "/#contacto" },
 ];
 
@@ -52,7 +52,11 @@ export function AppNavbar() {
               key={item.name}
               href={item.link}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="font-heading text-lg font-medium tracking-tight text-[#CBD5E1] transition-colors hover:text-[#F5F7FA]"
+              className={`font-heading text-lg font-medium tracking-tight transition-[color,background-color,border-color,box-shadow] hover:text-[#F5F7FA] ${
+                item.featured
+                  ? "rounded-full border border-[#3B82F6]/50 bg-[#3B82F6]/15 px-4 py-2 text-[#F5F7FA] shadow-[0_0_18px_rgba(59,130,246,0.16)] hover:border-[#60A5FA]/70 hover:bg-[#3B82F6]/25"
+                  : "text-[#CBD5E1]"
+              }`}
             >
               {item.name}
             </Link>

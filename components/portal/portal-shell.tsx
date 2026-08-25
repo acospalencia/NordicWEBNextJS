@@ -24,7 +24,14 @@ export function PortalShell({
         <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-5">
             <Link href="/" aria-label="Volver al inicio" className="shrink-0">
-              <Image src="/Logo.webp" alt="Nordictech" width={220} height={83} className="h-12 w-auto" priority />
+              <Image
+                src="/Logo-wordmark.webp"
+                alt="Nordictech"
+                width={1563}
+                height={248}
+                className="h-auto w-40 sm:w-44"
+                priority
+              />
             </Link>
             <div className="hidden border-l border-white/10 pl-5 sm:block">
               <p className="text-sm font-semibold text-white">{session.name}</p>
@@ -42,7 +49,7 @@ export function PortalShell({
                   className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"
                 >
                   <TicketCheck className="size-4" />
-                  <span className="hidden md:inline">Tickets</span>
+                  <span className="hidden md:inline">Tickets de Soporte</span>
                 </Link>
                 <Link
                   href="/portal/administracion/sistema"

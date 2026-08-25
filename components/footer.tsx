@@ -5,7 +5,7 @@ import { Phone, Mail, MapPin } from "lucide-react";
 const NAV_LINKS = [
   { name: "Nosotros", href: "/#nosotros" },
   { name: "Servicios", href: "/#servicios" },
-  { name: "Portal de clientes", href: "/portal/iniciar-sesion" },
+  { name: "Tickets de Soporte", href: "/portal/iniciar-sesion" },
   { name: "Contacto", href: "/#contacto" },
 ];
 
@@ -48,11 +48,11 @@ export function Footer() {
       <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-x-10 gap-y-10 pb-10 md:grid-cols-[1.4fr_auto_1fr]">
         <div>
           <Image
-            src="/Logo.webp"
+            src="/Logo-wordmark.webp"
             alt="Nordictech"
-            width={220}
-            height={83}
-            className="h-16 w-auto"
+            width={1563}
+            height={248}
+            className="h-auto w-56"
           />
           <p className="mt-4 max-w-sm text-xl font-semibold leading-snug tracking-tight text-[#F5F7FA]">
             Tecnología que conecta, protege y hace crecer.

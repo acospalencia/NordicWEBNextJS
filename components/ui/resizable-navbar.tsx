@@ -29,6 +29,7 @@ interface NavItemsProps {
   items: {
     name: string;
     link: string;
+    featured?: boolean;
   }[];
   className?: string;
   onItemClick?: () => void;
@@ -93,7 +94,7 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         y: visible ? 12 : 0,
       }}
       transition={{ type: "spring", stiffness: 200, damping: 50 }}
-      style={{ minWidth: "800px" }}
+      style={{ minWidth: "min(1000px, calc(100vw - 2rem))" }}
       className={cn(
         "relative z-[60] mx-auto hidden w-full max-w-6xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex",
         visible && "border border-white/10 bg-[#0B1120]/80",
@@ -112,7 +113,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 font-heading text-[15px] font-medium tracking-tight text-[#CBD5E1] lg:flex",
+        "hidden min-w-0 flex-1 flex-row items-center justify-center space-x-2 font-heading text-[15px] font-medium tracking-tight text-[#CBD5E1] lg:flex",
         className
       )}
     >
@@ -120,7 +121,11 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
         <Link
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
-          className="relative px-4 py-2 text-[#CBD5E1] transition-[color,transform] duration-150 hover:text-[#F5F7FA] active:scale-[0.97]"
+          className={cn(
+            "relative px-4 py-2 text-[#CBD5E1] transition-[color,transform,background-color,border-color,box-shadow] duration-150 hover:text-[#F5F7FA] active:scale-[0.97]",
+            item.featured &&
+              "rounded-full border border-[#3B82F6]/50 bg-[#3B82F6]/15 text-[#F5F7FA] shadow-[0_0_18px_rgba(59,130,246,0.16)] hover:border-[#60A5FA]/70 hover:bg-[#3B82F6]/25"
+          )}
           key={`link-${idx}`}
           href={item.link}
         >
@@ -202,10 +207,16 @@ export const MobileNavToggle = ({
   isOpen: boolean;
   onClick: () => void;
 }) => {
-  return isOpen ? (
-    <X className="text-[#F5F7FA]" onClick={onClick} />
-  ) : (
-    <Menu className="text-[#F5F7FA]" onClick={onClick} />
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+      aria-expanded={isOpen}
+      className="flex size-10 items-center justify-center rounded-full text-[#F5F7FA] transition-colors hover:bg-white/10"
+    >
+      {isOpen ? <X aria-hidden /> : <Menu aria-hidden />}
+    </button>
   );
 };
 
@@ -225,7 +236,14 @@ export const NavbarLogo = () => {
       onClick={handleClick}
       className="relative z-20 mr-4 flex items-center px-2 py-1"
     >
-      <Image src="/Logo.webp" alt="Nordictech" width={220} height={83} className="h-14 w-auto" priority />
+      <Image
+        src="/Logo-wordmark.webp"
+        alt="Nordictech"
+        width={1563}
+        height={248}
+        className="h-auto w-44 sm:w-48 lg:w-52"
+        priority
+      />
     </Link>
   );
 };

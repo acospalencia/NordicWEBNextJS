@@ -5,9 +5,9 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/ui/reveal";
 import { CountUp } from "@/components/ui/count-up";
 
 const STATS = [
-  { icon: ShieldCheck, value: 12, label: "Años de experiencia" },
-  { icon: Building2, value: 150, label: "Implementaciones realizadas" },
-  { icon: Users, value: 50, label: "Clientes satisfechos" },
+  { icon: ShieldCheck, value: 7, label: "Años de experiencia" },
+  { icon: Building2, value: 80, label: "Implementaciones realizadas" },
+  { icon: Users, value: 40, label: "Clientes satisfechos" },
   { icon: MapPin, value: "Cobertura", label: "Regional" },
 ] as const;
 
