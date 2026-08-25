@@ -1,5 +1,6 @@
 import {
   Camera,
+  Cloud,
   Flame,
   Fingerprint,
   Building2,
@@ -12,6 +13,13 @@ import {
   Sun,
   MonitorPlay,
   Boxes,
+  Radar,
+  Server,
+  Siren,
+  Telescope,
+  ThermometerSun,
+  TowerControl,
+  Waypoints,
   type LucideIcon,
 } from "lucide-react";
 
@@ -30,9 +38,9 @@ export const SERVICES: Service[] = [
   {
     slug: "seguridad-videovigilancia",
     icon: Camera,
-    name: "Seguridad Electrónica, Videovigilancia Inteligente y Control de Acceso",
+    name: "Seguridad Electrónica, Videovigilancia y Analítica Avanzada por IA",
     summary:
-      "Transforme la seguridad pasiva en un sistema activo de prevención y análisis operativo mediante Inteligencia Artificial.",
+      "Videovigilancia profesional con analítica perimetral, reconocimiento de matrículas, búsqueda forense e integración con VMS, alarmas y almacenamiento redundante 24/7.",
     highlight: {
       title: "Prevención Proactiva y Gestión de Riesgos",
       description:
@@ -67,7 +75,7 @@ export const SERVICES: Service[] = [
       {
         title: "Ecosistema Integrado (VMS + Accesos + Alarmas)",
         description:
-          "Centralización de videovigilancia con control de accesos biométricos/RFID, sensores perimetrales y plataformas VMS líderes del mercado.",
+          "Centralización de videovigilancia, control de accesos y alarmas sobre plataformas interoperables, incluyendo el ecosistema tecnológico de Motorola Solutions.",
       },
       {
         title: "Almacenamiento Redundante e Híbrido",
@@ -77,11 +85,143 @@ export const SERVICES: Service[] = [
     ],
   },
   {
+    slug: "videoseguridad-control-acceso-avigilon-unity",
+    icon: Server,
+    name: "Videoseguridad y Control de Acceso — Avigilon Unity",
+    summary:
+      "Diseñamos e implementamos ecosistemas locales de seguridad física con Avigilon Unity, integrando VMS, cámaras inteligentes, analítica de video, control de acceso, alarmas, servidores y almacenamiento. Centralizamos la detección, verificación e investigación de eventos en instalaciones empresariales o multisitio, con Unity Cloud Services cuando se requiere supervisión y administración remota.",
+    highlight: {
+      title: "Arquitectura local con control operativo",
+      description:
+        "Integramos una plataforma escalable alojada en la infraestructura del cliente, con gestión unificada de video y accesos y una extensión segura hacia servicios remotos cuando la operación lo requiere.",
+    },
+    scope: [
+      {
+        title: "Ingeniería de Unity Video y almacenamiento",
+        description:
+          "Dimensionamiento de servidores, grabación, retención, estaciones de operación y redes para una plataforma VMS local estable y escalable.",
+      },
+      {
+        title: "Cámaras y analítica inteligente",
+        description:
+          "Integración de cámaras y analítica basada en IA para alertas, clasificación de personas y vehículos y búsqueda avanzada de evidencia.",
+      },
+      {
+        title: "Unity Access y verificación por video",
+        description:
+          "Unificación de accesos, identidades, puertas, alarmas y video para verificar eventos y coordinar respuestas desde una sola operación.",
+      },
+      {
+        title: "Monitoreo centralizado y gestión de eventos",
+        description:
+          "Configuración de reglas, alarmas, permisos por rol, mapas y flujos de trabajo para instalaciones corporativas, industriales o críticas.",
+      },
+      {
+        title: "Operación multisitio y Unity Cloud Services",
+        description:
+          "Habilitación de administración remota, visualización de cámaras, intercambio de clips y supervisión de salud como extensión de la arquitectura local.",
+      },
+      {
+        title: "Implementación y soporte del ciclo de vida",
+        description:
+          "Instalación, configuración, puesta en marcha, capacitación, documentación y mantenimiento de la solución completa.",
+      },
+    ],
+  },
+  {
+    slug: "seguridad-fisica-nube-avigilon-alta",
+    icon: Cloud,
+    name: "Seguridad Física en la Nube — Avigilon Alta",
+    summary:
+      "Implementamos seguridad física cloud-native con Avigilon Alta para administrar video, accesos, usuarios, alertas y analítica desde web o móvil. Unificamos Alta Video y Alta Access en arquitecturas escalables para una o múltiples sedes, incorporando cámaras existentes mediante Cloud Connectors cuando son compatibles y reduciendo la dependencia de servidores locales.",
+    highlight: {
+      title: "Gestión cloud-native para una o múltiples sedes",
+      description:
+        "Centralizamos la operación de seguridad en una plataforma accesible remotamente, preparada para crecer por sitio, usuario, cámara o puerta sin replicar una infraestructura tradicional en cada ubicación.",
+    },
+    scope: [
+      {
+        title: "Alta Video y videoseguridad en la nube",
+        description:
+          "Configuración del VMS cloud, cámaras, retención, mapas y visualización remota desde navegador o aplicación móvil.",
+      },
+      {
+        title: "Alta Access y credenciales móviles",
+        description:
+          "Implementación de control de acceso cloud con lectores, controladores, usuarios, permisos, credenciales físicas o móviles y gestión de visitantes.",
+      },
+      {
+        title: "Analítica y alertas inteligentes",
+        description:
+          "Creación de reglas y notificaciones apoyadas en analítica de personas, vehículos y actividad para agilizar la verificación de incidentes.",
+      },
+      {
+        title: "Unificación de video y accesos",
+        description:
+          "Correlación de eventos de puertas con video en vivo o grabado para investigar incidentes desde una experiencia operacional común.",
+      },
+      {
+        title: "Migración mediante Cloud Connectors",
+        description:
+          "Evaluación e incorporación de cámaras y dispositivos existentes compatibles para facilitar una transición gradual hacia la nube.",
+      },
+      {
+        title: "Diseño, despliegue y soporte multisitio",
+        description:
+          "Planificación de conectividad, licenciamiento, configuración, capacitación y soporte para organizaciones distribuidas.",
+      },
+    ],
+  },
+  {
+    slug: "videovigilancia-termica-largo-alcance",
+    icon: Telescope,
+    name: "Videovigilancia Térmica y de Largo Alcance",
+    summary:
+      "Diseñamos sistemas electroópticos de vigilancia térmica y visible para detectar, seguir y verificar objetivos a grandes distancias en perímetros extensos. Integramos plataformas Silent Sentinel con analítica, posicionamiento PTZ, radar y VMS para proteger puertos, aeropuertos, instalaciones industriales e infraestructura crítica, incluso en entornos marítimos y condiciones ambientales exigentes.",
+    highlight: {
+      title: "Visibilidad más allá del perímetro convencional",
+      description:
+        "Combinamos sensores térmicos y visibles de largo alcance con seguimiento inteligente para anticipar amenazas y entregar al operador información verificable en escenarios complejos.",
+    },
+    scope: [
+      {
+        title: "Selección de sensores electroópticos EO/IR",
+        description:
+          "Diseño de configuraciones con cámaras térmicas LWIR o MWIR y sensores visibles de baja iluminación según distancia, objetivo y ambiente.",
+      },
+      {
+        title: "Plataformas PTZ de alta precisión",
+        description:
+          "Integración de posicionadores continuos y cargas multisensor para cubrir perímetros amplios con movimientos rápidos y precisos.",
+      },
+      {
+        title: "Detección, clasificación y seguimiento",
+        description:
+          "Configuración de analítica para identificar actividad relevante, seguir objetivos y reducir falsas alarmas antes de presentar eventos al operador.",
+      },
+      {
+        title: "Integración con radar y VMS",
+        description:
+          "Correlación de detecciones externas con video térmico o visible y conexión con plataformas de gestión para una respuesta centralizada.",
+      },
+      {
+        title: "Aplicaciones críticas y marítimas",
+        description:
+          "Soluciones para puertos, costas, aeropuertos, fronteras, industria y activos estratégicos expuestos a condiciones exigentes.",
+      },
+      {
+        title: "Instalación, puesta en marcha y mantenimiento",
+        description:
+          "Montaje, alineación, configuración, pruebas de desempeño, capacitación y soporte preventivo de la solución desplegada.",
+      },
+    ],
+  },
+  {
     slug: "deteccion-supresion-incendios",
     icon: Flame,
-    name: "Sistemas de Detección Temprana y Supresión Automática de Incendios",
+    name: "Detección y Supresión de Incendios",
     summary:
-      "Salvaguarde activos críticos, garantice la continuidad operativa y cumpla con los estándares internacionales más exigentes de seguridad contra incendios.",
+      "Diseño, instalación y mantenimiento de detección temprana, paneles direccionables y supresión automática, integrados con BMS y bajo normativas NFPA.",
     highlight: {
       title: "Ingeniería Normativa y Protección Integral",
       description:
@@ -123,9 +263,9 @@ export const SERVICES: Service[] = [
   {
     slug: "control-acceso-biometria",
     icon: Fingerprint,
-    name: "Sistemas Avanzados de Control de Acceso y Biometría",
+    name: "Control de Acceso y Biometría",
     summary:
-      "Gestione el flujo de personas y vehículos en tiempo real con tecnologías de identificación biométrica, credenciales digitales y administración centralizada.",
+      "Identificación biométrica, credenciales inteligentes, torniquetes, molinetes y cerraduras conectadas a plataformas centralizadas de administración y auditoría.",
     highlight: {
       title: "Gestión Eficiente y Trazabilidad Total",
       description:
@@ -167,9 +307,9 @@ export const SERVICES: Service[] = [
   {
     slug: "automatizacion-bms",
     icon: Building2,
-    name: "Automatización y Sistemas de Gestión de Edificios Inteligentes (BMS / BAS)",
+    name: "Automatización y Building Management Systems (BMS)",
     summary:
-      "Centralice la inteligencia de su infraestructura para maximizar la eficiencia energética, optimizar la operación y transformar sus instalaciones en edificios verdaderamente inteligentes.",
+      "Integración de iluminación, climatización, energía, alarmas, CCTV y seguridad para eficiencia operativa, ahorro energético y mantenimiento predictivo.",
     highlight: {
       title: "Eficiencia Operativa y Sustentabilidad",
       description:
@@ -209,11 +349,99 @@ export const SERVICES: Service[] = [
     ],
   },
   {
+    slug: "monitoreo-ambiental-instrumentacion",
+    icon: ThermometerSun,
+    name: "Monitoreo Ambiental e Instrumentación de Precisión",
+    summary:
+      "Implementamos sistemas de monitoreo ambiental e instrumentación de precisión con tecnología Vaisala para centros de datos, cuartos técnicos, industria y ambientes controlados. Integramos medición continua de temperatura, humedad, punto de rocío, CO₂ y presión diferencial con alarmas, trazabilidad e interoperabilidad hacia BMS o plataformas de supervisión existentes.",
+    highlight: {
+      title: "Datos confiables para continuidad y eficiencia",
+      description:
+        "Convertimos variables ambientales críticas en información operativa precisa para proteger equipos, optimizar HVAC y sostener condiciones controladas con trazabilidad histórica.",
+    },
+    scope: [
+      {
+        title: "Ingeniería de puntos de medición",
+        description:
+          "Levantamiento y definición de ubicaciones, rangos, precisión, conectividad y redundancia según el riesgo de cada instalación.",
+      },
+      {
+        title: "Sensores, sondas y transmisores industriales",
+        description:
+          "Integración de instrumentos para temperatura, humedad relativa, punto de rocío, CO₂ y presión diferencial en espacios o ductos.",
+      },
+      {
+        title: "Monitoreo continuo y registro histórico",
+        description:
+          "Implementación de data loggers y plataformas como viewLinc para supervisión permanente, tendencias, alarmas y trazabilidad de mediciones.",
+      },
+      {
+        title: "Centros de datos y cuartos técnicos",
+        description:
+          "Supervisión ambiental para proteger equipos críticos, detectar desviaciones y respaldar la optimización de climatización y consumo energético.",
+      },
+      {
+        title: "Integración con BMS y plataformas existentes",
+        description:
+          "Intercambio de datos mediante Modbus, OPC UA o API cuando la arquitectura y los equipos seleccionados lo permiten.",
+      },
+      {
+        title: "Instalación, verificación y soporte",
+        description:
+          "Montaje, configuración, pruebas, coordinación de calibración, documentación y mantenimiento periódico de la solución.",
+      },
+    ],
+  },
+  {
+    slug: "alerta-temprana-desastres-naturales",
+    icon: Siren,
+    name: "Sistemas de Alerta Temprana ante Desastres Naturales",
+    summary:
+      "Diseñamos e integramos sistemas de alerta temprana que conectan monitoreo ambiental e hidrometeorológico, telemetría, análisis de condiciones y canales de aviso para anticipar inundaciones, crecidas, lluvias intensas, deslizamientos y otros fenómenos naturales. La solución abarca estaciones remotas, centros de control, sirenas, mensajería y notificaciones para operadores, autoridades o comunidades.",
+    highlight: {
+      title: "Monitoreo → Comunicación → Análisis → Detección → Alerta",
+      description:
+        "Convertimos datos de campo en información accionable mediante un flujo integral que detecta condiciones de riesgo y distribuye alertas autorizadas por los canales definidos para cada proyecto.",
+    },
+    scope: [
+      {
+        title: "Sensores y estaciones hidrometeorológicas",
+        description:
+          "Integración de estaciones meteorológicas, pluviómetros, nivel de agua y variables como presión, humedad y temperatura según el fenómeno y el estudio técnico.",
+      },
+      {
+        title: "Telemetría y comunicaciones multicanal",
+        description:
+          "Transmisión de datos desde ubicaciones remotas mediante radio, celular, IP, satélite u otros enlaces disponibles, con redundancia cuando la criticidad lo exige.",
+      },
+      {
+        title: "Adquisición, análisis y detección",
+        description:
+          "Configuración de concentradores, reglas, umbrales y correlación de variables para identificar oportunamente condiciones potencialmente peligrosas.",
+      },
+      {
+        title: "Centros de monitoreo y visualización GIS",
+        description:
+          "Dashboards, mapas, tendencias, registro histórico y supervisión de estaciones para cuencas, laderas, costas, municipios o infraestructura crítica.",
+      },
+      {
+        title: "Alertamiento y coordinación de emergencias",
+        description:
+          "Integración con flujos autorizados de sirenas, torres, altavoces, mensajes de voz, balizas y notificaciones remotas hacia operadores o población.",
+      },
+      {
+        title: "Continuidad, puesta en marcha y mantenimiento",
+        description:
+          "Energía solar o de respaldo, comunicaciones redundantes, pruebas integrales, capacitación, documentación y mantenimiento preventivo de la solución.",
+      },
+    ],
+  },
+  {
     slug: "aire-acondicionado-electromecanica",
     icon: Wind,
-    name: "Ingeniería Electromecánica y Climatización de Alta Eficiencia (HVAC)",
+    name: "Aire Acondicionado e Ingeniería Electromecánica",
     summary:
-      "Diseñamos e implementamos infraestructura de climatización y proyectos electromecánicos de alta precisión para instalaciones industriales, comerciales y entornos de misión crítica.",
+      "Diseño HVAC, instalación de equipos, extracción, chillers, VRF/VRV, ducterías y mantenimiento electromecánico para instalaciones comerciales, industriales y de misión crítica.",
     highlight: {
       title: "Continuidad Operativa y Control Térmico de Precisión",
       description:
@@ -255,9 +483,9 @@ export const SERVICES: Service[] = [
   {
     slug: "electricidad",
     icon: Zap,
-    name: "Ingeniería Eléctrica, Distribución y Sistemas de Respaldo de Energía",
+    name: "Electricidad",
     summary:
-      "Diseñamos e implementamos soluciones eléctricas integrales en media y baja tensión, garantizando la continuidad del suministro y la máxima seguridad para sus instalaciones.",
+      "Soluciones de baja y media tensión, tableros, distribución, canalización, iluminación, respaldo eléctrico, UPS y puesta a tierra para infraestructura comercial e industrial.",
     highlight: {
       title: "Calidad de Energía y Continuidad Directa",
       description:
@@ -265,7 +493,7 @@ export const SERVICES: Service[] = [
     },
     scope: [
       {
-        title: "Proyectos de Media y Baja Tensión",
+        title: "Instalaciones de Media y Baja Tensión",
         description:
           "Ingeniería, diseño, trámites de factibilidad y montaje de subestaciones eléctricas, acometidas, transformadores y redes de distribución corporativa e industrial.",
       },
@@ -282,7 +510,7 @@ export const SERVICES: Service[] = [
       {
         title: "Sistemas de Canalización e Iluminación Eficiente",
         description:
-          "Rutas de canalización pesada e industrial (bandejas portacables, tubería EMT/IMC, ductos subterráneos) y proyectos de iluminación LED de alto rendimiento y control inteligente.",
+          "Rutas de canalización pesada e industrial (bandejas portacables, tubería EMT/IMC, ductos subterráneos) y soluciones de iluminación LED de alto rendimiento y control inteligente.",
       },
       {
         title: "Sistemas de Puesta a Tierra (SPAT) y Protección Atmosférica",
@@ -297,11 +525,55 @@ export const SERVICES: Service[] = [
     ],
   },
   {
+    slug: "redes-comunicaciones",
+    icon: Waypoints,
+    name: "Redes y Comunicaciones",
+    summary:
+      "Diseñamos e implementamos infraestructuras de redes y comunicaciones seguras, estables y escalables para entornos corporativos, industriales y críticos. Integramos LAN, WAN, Wi-Fi empresarial, fibra óptica, switching, routing, enlaces inalámbricos, firewalls y VPN, asegurando conectividad confiable para videovigilancia, control de acceso, automatización, IoT y demás plataformas tecnológicas.",
+    highlight: {
+      title: "Conectividad segura de extremo a extremo",
+      description:
+        "Unificamos infraestructura física, networking y seguridad en una arquitectura administrable y resiliente, seleccionando tecnologías Cisco, Fortinet, Ubiquiti, Lightera/Furukawa u otras compatibles según cada proyecto.",
+    },
+    scope: [
+      {
+        title: "Arquitectura LAN, WAN y backbone",
+        description:
+          "Levantamiento, diseño lógico y físico, direccionamiento, capacidad, redundancia y alta disponibilidad para sedes, campus e instalaciones críticas.",
+      },
+      {
+        title: "Cableado estructurado y fibra óptica",
+        description:
+          "Integración de cobre, fibra monomodo o multimodo, racks, canalizaciones, distribución principal y certificación de enlaces instalados.",
+      },
+      {
+        title: "Wi-Fi empresarial y enlaces inalámbricos",
+        description:
+          "Diseño de cobertura, capacidad y roaming, configuración de redes inalámbricas y enlaces punto a punto o multipunto.",
+      },
+      {
+        title: "Switching, routing y segmentación",
+        description:
+          "Configuración de switches y routers, VLAN, enlaces troncales, calidad de servicio y políticas para separar usuarios, IoT y sistemas críticos.",
+      },
+      {
+        title: "Firewalls, VPN y seguridad de red",
+        description:
+          "Protección perimetral, acceso remoto seguro, interconexión de sedes y controles de tráfico alineados con los riesgos operativos del cliente.",
+      },
+      {
+        title: "Monitoreo, diagnóstico y soporte",
+        description:
+          "Supervisión centralizada, análisis de desempeño, optimización, documentación y soporte para cámaras, accesos, automatización y otras plataformas conectadas.",
+      },
+    ],
+  },
+  {
     slug: "cableado-fibra-optica",
     icon: Cable,
-    name: "Infraestructura de Red, Cableado Estructurado y Fibra Óptica",
+    name: "Cableado Estructurado y Fibra Óptica",
     summary:
-      "Diseñamos e implementamos redes de alta velocidad, escalables y sin puntos de fallo para garantizar la conectividad crítica de su empresa.",
+      "Redes Cat6/Cat6A, fibra monomodo y multimodo, certificación FLUKE, racks, cuartos de telecomunicaciones y topologías avanzadas como Spine-Leaf.",
     highlight: {
       title: "Certificación de Red de Nivel Industrial",
       description:
@@ -336,9 +608,9 @@ export const SERVICES: Service[] = [
   {
     slug: "redes-gpon",
     icon: Network,
-    name: "Redes Ópticas Pasivas GPON / POL (Passive Optical LAN)",
+    name: "Redes GPON",
     summary:
-      "Infraestructura de fibra óptica convergente de ultra alta velocidad y densidad para la transmisión unificada de datos, voz, video y servicios IoT.",
+      "Redes pasivas de fibra óptica para datos, voz y video con OLT, ONT, splitters, FTTH/FTTB, certificación, planificación de capacidad y optimización.",
     highlight: {
       title: "Eficiencia Financiera y Escalabilidad sin Límites",
       description:
@@ -380,9 +652,9 @@ export const SERVICES: Service[] = [
   {
     slug: "switches-firewalls",
     icon: Router,
-    name: "Equipos de Acceso, Conmutación Avanzada y Ciberseguridad Perimetral (Switches L2/L3 & NGFW)",
+    name: "Equipos de Acceso, Switches y Firewalls",
     summary:
-      "Diseñamos e implementamos arquitecturas de red seguras, escalables y de alta velocidad, protegiendo los activos digitales de su empresa contra amenazas avanzadas.",
+      "Suministro e integración de equipos L2/L3, enrutadores, enlaces de alta capacidad, firewalls de próxima generación, segmentación y administración centralizada.",
     highlight: {
       title: "Protección Perimetral y Redes de Alto Rendimiento",
       description:
@@ -424,9 +696,9 @@ export const SERVICES: Service[] = [
   {
     slug: "telefonia-ip-videoconferencia",
     icon: Phone,
-    name: "Comunicaciones Unificadas, Telefonía IP y Salas de Videoconferencia HD/4K",
+    name: "Telefonía IP y Videoconferencia",
     summary:
-      "Conecte a sus equipos de trabajo desde cualquier lugar con plataformas de voz, video y colaboración de alta definición integradas a sus procesos de negocio.",
+      "PBX IP, teléfonos inteligentes, videoconferencia HD/4K, salas de reuniones, colaboración remota y plataformas de administración unificada de voz y video.",
     highlight: {
       title: "Colaboración Sin Fronteras y Operación Híbrida",
       description:
@@ -468,9 +740,9 @@ export const SERVICES: Service[] = [
   {
     slug: "respaldo-energia-fotovoltaica",
     icon: Sun,
-    name: "Sistemas de Respaldo de Energía y Generación Fotovoltaica",
+    name: "Sistemas de Respaldo y Energía Fotovoltaica",
     summary:
-      "Asegure la continuidad de sus operaciones críticas y reduzca drásticamente los costos operativos con soluciones integrales de energía limpia y respaldo ininterrumpido.",
+      "UPS, bancos de baterías, sistemas solares, inversores, tableros de transferencia y diseño energético orientado a eficiencia operativa y continuidad del negocio.",
     highlight: {
       title: "Independencia Energética y Cero Tiempo de Inactividad",
       description:
@@ -505,16 +777,104 @@ export const SERVICES: Service[] = [
       {
         title: "Cumplimiento de Metas de Sustentabilidad (ESG)",
         description:
-          "Proyectos diseñados para reducir la huella de carbono de su empresa, facilitar la obtención de certificaciones de edificios verdes (LEED, EDGE) y fortalecer la responsabilidad social corporativa.",
+          "Soluciones diseñadas para reducir la huella de carbono de su empresa, facilitar la obtención de certificaciones de edificios verdes (LEED, EDGE) y fortalecer la responsabilidad social corporativa.",
+      },
+    ],
+  },
+  {
+    slug: "sistemas-maritimos-ayudas-navegacion",
+    icon: TowerControl,
+    name: "Sistemas Marítimos y Ayudas a la Navegación",
+    summary:
+      "Diseñamos e integramos ayudas a la navegación y sistemas de señalización para puertos, puentes, helipuertos, instalaciones offshore y zonas marítimas. Con tecnología Pharos Marine Automatic Power implementamos linternas, balizas, AIS AtoN, iluminación aeronáutica, energía remota y respaldo, cubriendo ingeniería, suministro, instalación, puesta en marcha y mantenimiento para ambientes severos o clasificados.",
+    highlight: {
+      title: "Señalización confiable en condiciones extremas",
+      description:
+        "Integramos equipos marítimos, aeronáuticos y de energía remota dentro de una solución documentada y mantenible, dimensionada para la criticidad operacional de cada emplazamiento.",
+    },
+    scope: [
+      {
+        title: "Ayudas marítimas a la navegación (AtoN)",
+        description:
+          "Selección e integración de linternas, balizas, boyas y sistemas de señalización para canales, puertos, estructuras fijas o flotantes.",
+      },
+      {
+        title: "Señalización de puentes y faros",
+        description:
+          "Implementación de luces de canal, luces de enfilación, balizas de faro y señalización de obstáculos sobre aguas navegables.",
+      },
+      {
+        title: "Helipuertos e iluminación de obstáculos",
+        description:
+          "Diseño e instalación de iluminación para helidecks e infraestructura aeronáutica asociada a operaciones portuarias u offshore.",
+      },
+      {
+        title: "AIS AtoN, RACON y monitoreo remoto",
+        description:
+          "Integración de identificación automática, balizas radar y supervisión del estado o posición de las ayudas a la navegación.",
+      },
+      {
+        title: "Energía remota, solar y standby",
+        description:
+          "Dimensionamiento de alimentación autónoma o de respaldo para ubicaciones aisladas, plataformas y aplicaciones de baja disponibilidad de red.",
+      },
+      {
+        title: "Ingeniería, commissioning y mantenimiento",
+        description:
+          "Levantamiento, diseño, suministro, instalación, puesta en marcha, pruebas de aceptación, capacitación y mantenimiento preventivo.",
+      },
+    ],
+  },
+  {
+    slug: "navegacion-maritima-monitoreo-costero",
+    icon: Radar,
+    name: "Navegación Marítima y Monitoreo Costero",
+    summary:
+      "Integramos plataformas profesionales TIMEZERO para navegación, cartografía electrónica y vigilancia marítima. Centralizamos cartas náuticas, radar, AIS, GPS y sensores compatibles en una interfaz operacional que mejora el conocimiento situacional, el seguimiento de embarcaciones y la supervisión de puertos o costas, tanto a bordo como en centros de monitoreo y control.",
+    highlight: {
+      title: "Conocimiento situacional marítimo unificado",
+      description:
+        "Consolidamos cartografía, blancos y sensores de navegación en una experiencia operacional coherente para tomar decisiones con mayor contexto a bordo o desde tierra.",
+    },
+    scope: [
+      {
+        title: "TIMEZERO Professional",
+        description:
+          "Instalación y configuración de estaciones profesionales de navegación con espacios de trabajo, rutas, alarmas y perfiles operativos.",
+      },
+      {
+        title: "Cartografía electrónica y planificación",
+        description:
+          "Configuración de cartas compatibles, capas operativas, rutas, waypoints y herramientas de planificación para cada zona de navegación.",
+      },
+      {
+        title: "Integración de radar, AIS y GPS",
+        description:
+          "Conexión de sensores e instrumentos compatibles mediante redes y protocolos marítimos para visualizar posición, rumbo y objetivos.",
+      },
+      {
+        title: "Seguimiento de embarcaciones y alarmas",
+        description:
+          "Presentación de blancos AIS o ARPA, trazas, zonas de vigilancia y avisos operativos para apoyar una respuesta oportuna.",
+      },
+      {
+        title: "TIMEZERO Coastal Monitoring",
+        description:
+          "Diseño de puestos y centros de vigilancia costera que combinan radar, AIS, cámaras y cartografía en una interfaz centralizada.",
+      },
+      {
+        title: "Puesta en marcha, formación y soporte",
+        description:
+          "Configuración de equipos, pruebas de integración, perfiles de usuario, capacitación operacional y mantenimiento de la plataforma.",
       },
     ],
   },
   {
     slug: "audiovisuales-multimedia",
     icon: MonitorPlay,
-    name: "Soluciones Audiovisuales Avanzadas, Multimedia y Controladores AV",
+    name: "Soluciones Audiovisuales y Multimedia",
     summary:
-      "Diseñamos e integramos infraestructuras audiovisuales de alto impacto y tecnología inmersiva para salas de control, centros de operaciones, auditorios y espacios corporativos.",
+      "Integración de video walls, pantallas profesionales, proyectores, sonido, auditorios, salas interactivas, centros de operaciones y controladores AV.",
     highlight: {
       title: "Visualización Crítica y Experiencia Inmersiva",
       description:
@@ -554,11 +914,11 @@ export const SERVICES: Service[] = [
     ],
   },
   {
-    slug: "proyectos-especiales",
+    slug: "servicios-especiales",
     icon: Boxes,
-    name: "Proyectos Especiales e Integración Tecnológica \"Llave en Mano\" (Turnkey Solutions)",
+    name: "Servicios Especiales e Integración Llave en Mano",
     summary:
-      "Diseñamos, ejecutamos e integramos proyectos tecnológicos complejos y a la medida, coordinando múltiples especialidades en una única solución centralizada.",
+      "Soluciones a la medida que integran centros de monitoreo, cuartos de control e infraestructura tecnológica para sectores corporativos y gubernamentales.",
     highlight: {
       title: "Gestión Unificada y Cero Fricción",
       description:
@@ -583,7 +943,7 @@ export const SERVICES: Service[] = [
       {
         title: "Soluciones Estratégicas para Sector Corporativo, Industrial y Gubernamental",
         description:
-          "Desarrollo de proyectos a medida con altos estándares de confidencialidad, cumplimiento normativo (ISO, NFPA, TIA/EIA) y certificaciones de seguridad.",
+          "Desarrollo de soluciones a medida con altos estándares de confidencialidad, cumplimiento normativo (ISO, NFPA, TIA/EIA) y certificaciones de seguridad.",
       },
       {
         title: "Commissioning, Puesta en Marcha y Certificación",

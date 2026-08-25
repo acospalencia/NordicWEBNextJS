@@ -12,12 +12,37 @@ type LogoEntry = {
   src: string;
   width: number;
   height: number;
+  frameClassName?: string;
   imgClassName?: string;
   /** Logos oscuros ilegibles sobre navy: se renderizan en blanco monocromo */
   invert?: boolean;
 };
 
 const LOGOS: LogoEntry[] = [
+  {
+    name: "Pharos Marine Automatic Power",
+    src: "/Logos/partners/pharos-marine-automatic-power.png",
+    width: 350,
+    height: 175,
+    imgClassName: "max-h-12 sm:max-h-14",
+    invert: true,
+  },
+  {
+    name: "Avigilon Alta",
+    src: "/Logos/partners/avigilon-alta.png",
+    width: 900,
+    height: 394,
+    imgClassName: "max-h-12 sm:max-h-14",
+    invert: true,
+  },
+  {
+    name: "Avigilon Unity",
+    src: "/Logos/partners/avigilon-unity.png",
+    width: 250,
+    height: 105,
+    imgClassName: "max-h-11 sm:max-h-12",
+    invert: true,
+  },
   {
     name: "Cisco",
     src: "/Logos/trimmed/Cisco_idDRq-IGim_0.png",
@@ -33,11 +58,12 @@ const LOGOS: LogoEntry[] = [
     imgClassName: "max-h-7 sm:max-h-8",
   },
   {
-    name: "Furukawa",
-    src: "/Logos/trimmed/Furukawa.png",
-    width: 989,
-    height: 235,
+    name: "Furukawa / Lightera",
+    src: "/Logos/partners/lightera.svg",
+    width: 2648,
+    height: 613,
     imgClassName: "max-h-8 sm:max-h-9",
+    invert: true,
   },
   {
     name: "Genetec",
@@ -64,14 +90,6 @@ const LOGOS: LogoEntry[] = [
     invert: true,
   },
   {
-    name: "Motorola",
-    src: "/Logos/trimmed/Motorola_ideLVQnRXz_0.png",
-    width: 820,
-    height: 171,
-    imgClassName: "max-h-7 sm:max-h-8",
-    invert: true,
-  },
-  {
     name: "Microsoft",
     src: "/Logos/Microsoft.webp",
     width: 800,
@@ -79,10 +97,18 @@ const LOGOS: LogoEntry[] = [
     imgClassName: "max-h-7 sm:max-h-8",
   },
   {
-    name: "Norcom",
-    src: "/Logos/trimmed/norcom-seeklogo.png",
-    width: 2000,
-    height: 396,
+    name: "Motorola Solutions",
+    src: "/Logos/partners/motorola-solutions.svg",
+    width: 216,
+    height: 34,
+    imgClassName: "w-32 max-w-none sm:w-36",
+    invert: true,
+  },
+  {
+    name: "NorCom",
+    src: "/Logos/partners/norcom-current.png",
+    width: 1280,
+    height: 256,
     imgClassName: "max-h-8 sm:max-h-9",
   },
   {
@@ -102,12 +128,37 @@ const LOGOS: LogoEntry[] = [
     invert: true,
   },
   {
+    name: "Silent Sentinel",
+    src: "/Logos/partners/silent-sentinel.png",
+    width: 267,
+    height: 80,
+    imgClassName: "max-h-8 sm:max-h-9",
+    invert: true,
+  },
+  {
     name: "Simplex",
     src: "/Logos/simplex-seeklogo.png",
     width: 2000,
     height: 419,
     imgClassName: "max-h-9 sm:max-h-10",
     invert: true,
+  },
+  {
+    name: "TIMEZERO",
+    src: "/Logos/partners/timezero.png",
+    width: 320,
+    height: 320,
+    frameClassName: "h-7 w-full overflow-hidden sm:h-8",
+    imgClassName:
+      "absolute left-1/2 top-1/2 w-[7.4rem] max-w-none -translate-x-1/2 -translate-y-1/2 sm:w-32 xl:w-[7.4rem]",
+    invert: true,
+  },
+  {
+    name: "Vaisala",
+    src: "/Logos/partners/vaisala-white.png",
+    width: 2929,
+    height: 772,
+    imgClassName: "max-h-8 sm:max-h-9",
   },
   {
     name: "Velasea",
@@ -145,11 +196,14 @@ export function LogoCloud() {
       {LOGOS.map((logo, index) => (
         <div
           key={logo.name}
-          className="relative flex h-24 items-center justify-center border-b border-white/[0.06] px-6 sm:h-28 [&:not(:nth-child(2n))]:border-r sm:[&:not(:nth-child(2n))]:border-r-0 sm:[&:not(:nth-child(3n))]:border-r md:[&:not(:nth-child(3n))]:border-r-0 md:[&:not(:nth-child(4n))]:border-r xl:[&:not(:nth-child(4n))]:border-r-0 xl:[&:not(:nth-child(7n))]:border-r"
+          className="relative flex h-24 items-center justify-center border-b border-white/[0.06] px-6 sm:h-28 [&:not(:nth-child(2n))]:border-r sm:[&:not(:nth-child(2n))]:border-r-0 sm:[&:not(:nth-child(3n))]:border-r md:[&:not(:nth-child(3n))]:border-r-0 md:[&:not(:nth-child(4n))]:border-r xl:[&:not(:nth-child(4n))]:border-r-0 xl:[&:not(:nth-child(7n))]:border-r [&:last-child]:border-r-0"
           onMouseEnter={() => setHoveredIndex(index)}
         >
           <HoverGlow active={hoveredIndex === index} layoutId={`logo-glow-${id}`} className="inset-0" />
-          <motion.div variants={iconVariants} className="relative z-10 flex items-center justify-center">
+          <motion.div
+            variants={iconVariants}
+            className={cn("relative z-10 flex items-center justify-center", logo.frameClassName)}
+          >
             <Image
               src={logo.src}
               alt={logo.name}

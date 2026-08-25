@@ -22,10 +22,10 @@ export function CtaSection() {
             <ArrowRight className="size-4" />
           </Link>
           <Link
-            href="/#proyectos"
+            href="/#servicios"
             className="inline-flex items-center justify-center gap-2 rounded border border-white/15 px-6 py-3 text-sm font-semibold text-[#F5F7FA] transition-[border-color,transform] duration-150 hover:border-white/30 active:scale-[0.97]"
           >
-            Ver proyectos
+            Ver servicios
           </Link>
         </div>
       </Reveal>

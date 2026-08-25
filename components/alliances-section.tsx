@@ -23,11 +23,12 @@ export function AlliancesSection() {
             Nuestros aliados
           </span>
           <h2 className="mt-4 max-w-xl text-3xl font-semibold tracking-tight text-[#F5F7FA] sm:text-4xl">
-            Alianzas que fortalecen cada proyecto
+            Alianzas que fortalecen cada solución
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#94A3B8]">
-            Trabajamos con fabricantes líderes en seguridad, redes, protección contra
-            incendios y climatización para garantizar soluciones robustas y soportadas.
+            Trabajamos con fabricantes líderes en seguridad, redes, navegación y
+            señalización marítima, medición ambiental, protección contra incendios y
+            climatización para garantizar soluciones robustas y soportadas.
           </p>
         </Reveal>
 

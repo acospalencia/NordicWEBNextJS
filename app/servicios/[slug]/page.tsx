@@ -109,7 +109,7 @@ export default async function ServiceDetailPage({
             className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-[#3B82F6] transition-colors hover:text-[#60A5FA]"
           >
             <ArrowLeft className="size-4" />
-            Ver las 13 líneas de negocio
+            Ver las {SERVICES.length} líneas de negocio
           </Link>
         </div>
       </section>

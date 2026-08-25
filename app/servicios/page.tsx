@@ -8,8 +8,7 @@ import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Líneas de negocio — Nordictech El Salvador",
-  description:
-    "Las 13 líneas de negocio de Nordictech: seguridad electrónica, incendios, control de acceso, redes, energía y automatización para infraestructura crítica.",
+  description: `Las ${SERVICES.length} líneas de negocio de Nordictech: seguridad electrónica, videoseguridad, soluciones marítimas, monitoreo ambiental, redes, energía y automatización para infraestructura crítica.`,
 };
 
 export default function ServiciosPage() {
@@ -25,8 +24,8 @@ export default function ServiciosPage() {
             Líneas de negocio
           </h1>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#94A3B8]">
-            Trece líneas de negocio bajo un mismo integrador. Elegí una para ver el alcance
-            completo del servicio.
+            {SERVICES.length} líneas de negocio bajo un mismo integrador. Elegí una para ver
+            el alcance completo del servicio.
           </p>
         </div>
       </section>

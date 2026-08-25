@@ -284,7 +284,7 @@ export function ContactForm() {
           id="mensaje"
           name="mensaje"
           rows={5}
-          placeholder="Comentanos sobre tu proyecto *"
+          placeholder="Contanos qué servicio o solución necesitás *"
           ref={(el) => {
             fieldRefs.current.mensaje = el;
           }}

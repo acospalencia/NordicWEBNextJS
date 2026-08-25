@@ -6,7 +6,7 @@ import { CountUp } from "@/components/ui/count-up";
 
 const STATS = [
   { icon: ShieldCheck, value: 12, label: "Años de experiencia" },
-  { icon: Building2, value: 150, label: "Proyectos realizados" },
+  { icon: Building2, value: 150, label: "Implementaciones realizadas" },
   { icon: Users, value: 50, label: "Clientes satisfechos" },
   { icon: MapPin, value: "Cobertura", label: "Regional" },
 ] as const;
@@ -41,7 +41,7 @@ export function About() {
             infraestructura crítica y entornos industriales.
           </p>
           <p className="mt-3 max-w-xl text-base leading-7 text-[#94A3B8]">
-            Garantizamos eficiencia, seguridad y desempeño en cada proyecto.
+            Garantizamos eficiencia, seguridad y desempeño en cada implementación.
           </p>
 
           <Link

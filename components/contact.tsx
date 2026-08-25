@@ -46,7 +46,7 @@ export function Contact() {
               Contacto
             </span>
             <h2 className="mt-4 max-w-md text-3xl font-semibold tracking-tight text-[#F5F7FA] sm:text-4xl">
-              Hablemos de tu proyecto
+              Hablemos de la solución que necesitás
             </h2>
             <p className="mt-4 max-w-md text-base leading-7 text-[#94A3B8]">
               Estamos listos para ayudarte a diseñar e implementar soluciones tecnológicas a

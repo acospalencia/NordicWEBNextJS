@@ -11,6 +11,6 @@ export const SERVICE_OPTIONS = [
   "Telefonía IP y videoconferencia",
   "Respaldo y energía fotovoltaica",
   "Soluciones audiovisuales y multimedia",
-  "Proyectos especiales",
+  "Servicios especiales e integración llave en mano",
   "Otro / no estoy seguro",
 ] as const;

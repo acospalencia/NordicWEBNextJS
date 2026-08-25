@@ -1,16 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { ServicesOrbitCarousel } from "@/components/services-orbit";
+import { ServicesGrid } from "@/components/services-grid";
 import { Reveal } from "@/components/ui/reveal";
-
-const FEATURED_SLUGS = [
-  "seguridad-videovigilancia",
-  "deteccion-supresion-incendios",
-  "control-acceso-biometria",
-  "automatizacion-bms",
-  "cableado-fibra-optica",
-  "redes-gpon",
-];
+import { SERVICES } from "@/lib/services";
 
 export function BusinessLines() {
   return (
@@ -18,27 +10,28 @@ export function BusinessLines() {
       <div className="mx-auto max-w-6xl">
         <Reveal>
           <span className="font-mono text-xs font-semibold uppercase tracking-[0.25em] text-[#3B82F6]">
-            Líneas de negocio
+            Servicios
           </span>
           <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-[#F5F7FA] sm:text-4xl">
-            Soluciones integrales para infraestructura crítica
+            Ingeniería e integración tecnológica para infraestructura crítica
           </h2>
           <p className="mt-4 max-w-xl text-base leading-7 text-[#94A3B8]">
-            Trece líneas de negocio bajo un mismo integrador — diseño, implementación y
-            mantenimiento de extremo a extremo.
+            Diseñamos, implementamos y mantenemos soluciones integrales de seguridad,
+            navegación, monitoreo ambiental, comunicaciones, automatización y energía con
+            enfoque en continuidad operativa.
           </p>
         </Reveal>
 
-        <Reveal delay={0.1} className="mt-12">
-          <ServicesOrbitCarousel slugs={FEATURED_SLUGS} />
-        </Reveal>
+        <div className="mt-12">
+          <ServicesGrid slugs={SERVICES.map((service) => service.slug)} />
+        </div>
 
         <Reveal delay={0.15}>
           <Link
             href="/servicios"
             className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-[#3B82F6] transition-colors hover:text-[#60A5FA]"
           >
-            Ver las 13 líneas de negocio
+            Conocer el alcance de cada servicio
             <ArrowRight className="size-4" />
           </Link>
         </Reveal>

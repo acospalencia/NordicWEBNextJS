@@ -1,7 +1,11 @@
 "use server";
 
-import { Resend } from "resend";
 import { SERVICE_OPTIONS } from "@/lib/contact-options";
+import {
+  PortalApiError,
+  portalApiRequest,
+  type PortalApiEnvelope,
+} from "@/lib/portal/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^\d{8,15}$/;
@@ -51,43 +55,35 @@ export async function sendContactMessage(
     return { status: "error", errors };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY no está configurada.");
-    return { status: "error", message: GENERIC_ERROR_MESSAGE };
-  }
-
-  const resend = new Resend(apiKey);
-  const toEmail = process.env.CONTACT_TO_EMAIL ?? "info@nordictech-corp.com";
-  const fromEmail = process.env.CONTACT_FROM_EMAIL ?? "Nordictech Web <onboarding@resend.dev>";
-
-  const bodyLines = [
-    `Nombre: ${nombre}`,
-    empresa ? `Empresa: ${empresa}` : null,
-    `Correo: ${correo}`,
-    telefono ? `Teléfono: ${telefono}` : null,
+  const projectDetails = [
+    `Empresa: ${empresa || "No indicada"}`,
+    `Teléfono: ${telefono}`,
     `Línea de servicio: ${servicio}`,
     "",
     mensaje,
-  ].filter((line): line is string => line !== null);
+  ].join("\n");
 
   try {
-    const { error } = await resend.emails.send({
-      from: fromEmail,
-      to: toEmail,
-      replyTo: correo,
-      subject: `Cotización — ${servicio}`,
-      text: bodyLines.join("\n"),
+    const response = await portalApiRequest<PortalApiEnvelope>("enviar.php", {
+      method: "POST",
+      form: {
+        nombre,
+        email: correo,
+        mensaje: projectDetails,
+      },
     });
 
-    if (error) {
-      console.error("Resend error:", error);
+    if (response.status !== "success") {
+      console.error("El endpoint PHP rechazó el contacto:", response.message);
       return { status: "error", message: GENERIC_ERROR_MESSAGE };
     }
 
     return { status: "success" };
   } catch (error) {
-    console.error("Contact form send failed:", error);
+    console.error(
+      "Contact form PHP send failed:",
+      error instanceof PortalApiError ? error.message : error
+    );
     return { status: "error", message: GENERIC_ERROR_MESSAGE };
   }
 }

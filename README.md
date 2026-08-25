@@ -8,8 +8,7 @@ Sitio corporativo de **Nordictech El Salvador S.A. de C.V.** (nordictech-corp.co
 - **Tailwind CSS v4** vía `@tailwindcss/postcss` — sin `tailwind.config.js` clásico, configuración vía `@import "tailwindcss"` en `app/globals.css`
 - **motion** (sucesor de Framer Motion) — animaciones. No usar `framer-motion` (paquete legado)
 - **lucide-react** — iconos (única librería de iconos del proyecto)
-- **Resend** — envío del formulario de contacto vía Server Action
-- **Endpoints PHP en Bluehost** — autenticación, tickets y persistencia del portal
+- **Endpoints PHP en Bluehost** — formulario de contacto, autenticación, tickets y persistencia del portal
 - **ESLint 9** + `eslint-config-next`
 - Deploy: **Vercel**
 
@@ -43,19 +42,17 @@ Abrí [http://localhost:3000](http://localhost:3000).
 Copiar `.env.local.example` a `.env.local`:
 
 ```bash
-# Resend (https://resend.com) — envío del formulario de contacto
-RESEND_API_KEY=
-
-# Opcionales — por defecto usan info@nordictech-corp.com y el remitente sandbox de Resend
-# CONTACT_TO_EMAIL=info@nordictech-corp.com
-# CONTACT_FROM_EMAIL="Nordictech Web <onboarding@resend.dev>"
+# Endpoints PHP alojados en Bluehost (contacto y portal de tickets)
+PORTAL_API_BASE_URL=https://api.nordictech-corp.com/assets/php
 ```
 
-El portal requiere la URL pública de los endpoints PHP y el secreto de sesión indicados
-en `.env.local.example`. Vercel no se conecta a MySQL: todas las operaciones pasan por
-Bluehost mediante `PORTAL_API_BASE_URL`.
+El formulario de contacto y el portal requieren la URL pública de los endpoints PHP.
+El portal también necesita el secreto de sesión indicado en `.env.local.example`.
+Vercel no se conecta a MySQL: todas las operaciones pasan por Bluehost mediante
+`PORTAL_API_BASE_URL`.
 
-Sin `RESEND_API_KEY` el formulario de contacto falla de forma controlada (mensaje de error genérico, se loguea en servidor) — no hay mock/fallback silencioso.
+Sin `PORTAL_API_BASE_URL`, tanto el formulario de contacto como el portal fallan de
+forma controlada; no hay mocks ni fallbacks que simulen un envío exitoso.
 
 ## Estructura del proyecto
 
@@ -64,7 +61,7 @@ app/
 ├── page.tsx              # Home
 ├── layout.tsx            # Layout raíz
 ├── globals.css           # Estilos globales + import de Tailwind v4
-├── actions.ts            # Server Action: sendContactMessage (formulario de contacto vía Resend)
+├── actions.ts            # Server Action: sendContactMessage (formulario vía endpoint PHP)
 ├── nosotros/page.tsx     # Página "Nosotros"
 └── servicios/
     ├── page.tsx           # Listado de líneas de negocio
@@ -121,7 +118,12 @@ bitácoras, estados y correos continúan siendo procesados por el backend PHP ex
 
 ## Formulario de contacto
 
-`components/contact-form.tsx` usa el Server Action `sendContactMessage` (`app/actions.ts`) con `useActionState`. Valida nombre, correo, teléfono (8–15 dígitos) y línea de servicio (contra `SERVICE_OPTIONS` de `lib/contact-options.ts`) antes de enviar el correo vía Resend. Sin datos válidos no se llega a llamar a la API.
+`components/contact-form.tsx` usa el Server Action `sendContactMessage` (`app/actions.ts`)
+con `useActionState`. Valida nombre, correo, teléfono (8–15 dígitos) y línea de servicio
+(contra `SERVICE_OPTIONS` de `lib/contact-options.ts`) antes de llamar a `enviar.php`.
+La empresa, el teléfono y la línea de servicio se agregan al cuerpo del mensaje para que
+el PHP existente lo envíe directamente mediante `mail()`. Sin datos válidos no se llama
+al endpoint.
 
 ## Convenciones
 
@@ -130,7 +132,7 @@ bitácoras, estados y correos continúan siendo procesados por el backend PHP ex
 - Iconos: siempre `lucide-react`.
 - Animaciones: siempre `motion`.
 - Idioma del contenido del sitio: **español**, tono corporativo/formal.
-- No usar mocks/fallbacks de datos "por si acaso" en flujos que aparenten funcionar sin estarlo (ver `app/actions.ts`: sin `RESEND_API_KEY` falla explícito, no simula envío).
+- No usar mocks/fallbacks de datos "por si acaso" en flujos que aparenten funcionar sin estarlo (ver `app/actions.ts`: si el endpoint PHP falla, no simula el envío).
 
 ## Roadmap
 
@@ -146,4 +148,6 @@ ni conexiones directas a la base MySQL.
 
 ## Deploy
 
-Deploy en **Vercel**. Configurar las variables de entorno de Resend (`RESEND_API_KEY`, opcionalmente `CONTACT_TO_EMAIL`/`CONTACT_FROM_EMAIL`) en el proyecto de Vercel antes de publicar, o el formulario de contacto no enviará correos.
+Deploy en **Vercel**. Configurar `PORTAL_API_BASE_URL` con la ruta pública de los
+endpoints PHP de Bluehost. El formulario utiliza `enviar.php`, y el portal requiere
+además las variables de sesión documentadas en `.env.local.example`.

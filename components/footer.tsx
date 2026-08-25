@@ -4,8 +4,7 @@ import { Phone, Mail, MapPin } from "lucide-react";
 
 const NAV_LINKS = [
   { name: "Nosotros", href: "/#nosotros" },
-  { name: "Servicios", href: "/servicios" },
-  { name: "Proyectos", href: "/#proyectos" },
+  { name: "Servicios", href: "/#servicios" },
   { name: "Portal de clientes", href: "/portal/iniciar-sesion" },
   { name: "Contacto", href: "/#contacto" },
 ];
