@@ -58,6 +58,13 @@ const LOGOS: LogoEntry[] = [
     imgClassName: "max-h-7 sm:max-h-8",
   },
   {
+    name: "Fortinet",
+    src: "/Logos/partners/fortinet.svg",
+    width: 581,
+    height: 160,
+    imgClassName: "max-h-8 sm:max-h-9",
+  },
+  {
     name: "Furukawa / Lightera",
     src: "/Logos/partners/lightera.svg",
     width: 2648,

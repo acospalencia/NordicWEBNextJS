@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, Geist_Mono } from "next/font/google";
-import { Preloader } from "@/components/preloader";
-import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
+import { SiteChrome } from "@/components/site-chrome";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -32,9 +31,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${spaceGrotesk.variable} ${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Preloader />
         {children}
-        <FloatingWhatsApp />
+        <SiteChrome />
       </body>
     </html>
   );
