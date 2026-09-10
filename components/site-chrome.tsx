@@ -11,7 +11,9 @@ const STANDALONE_ROUTES = new Set([
 export function SiteChrome() {
   const pathname = usePathname();
 
-  if (STANDALONE_ROUTES.has(pathname)) return null;
+  if (STANDALONE_ROUTES.has(pathname) || pathname.startsWith("/conteo")) {
+    return null;
+  }
 
   return (
     <>

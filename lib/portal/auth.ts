@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { normalizePeopleCounterCenterSlug } from "@/lib/people-counter/centers";
 import type { PortalRole, PortalSession } from "@/lib/portal/types";
 
 const SESSION_COOKIE = "nordictech_portal_session";
@@ -38,8 +39,11 @@ function decodeSession(value: string): PortalSession | null {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as PortalSession;
     if (
       !Number.isInteger(session.userId) ||
+      session.userId <= 0 ||
       !session.name ||
       ![1, 2, 3].includes(session.role) ||
+      (session.countCenterSlug !== null &&
+        normalizePeopleCounterCenterSlug(session.countCenterSlug) !== session.countCenterSlug) ||
       !Number.isFinite(session.lastActivity)
     ) {
       return null;
@@ -74,7 +78,12 @@ export async function setPortalSession(session: Omit<PortalSession, "lastActivit
 }
 
 export async function renewPortalSession(session: PortalSession) {
-  await setPortalSession({ userId: session.userId, name: session.name, role: session.role });
+  await setPortalSession({
+    userId: session.userId,
+    name: session.name,
+    role: session.role,
+    countCenterSlug: session.countCenterSlug,
+  });
 }
 
 export async function clearPortalSession() {

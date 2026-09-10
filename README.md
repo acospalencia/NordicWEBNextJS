@@ -44,6 +44,8 @@ Copiar `.env.local.example` a `.env.local`:
 ```bash
 # Endpoints PHP alojados en Bluehost (contacto y portal de tickets)
 PORTAL_API_BASE_URL=https://api.nordictech-corp.com/assets/php
+PEOPLE_COUNTER_API_BASE_URL=https://conteo.nordictech-corp.com
+PEOPLE_COUNTER_API_READ_TOKEN=REEMPLAZAR_CON_TOKEN_PRIVADO
 ```
 
 El formulario de contacto y el portal requieren la URL pública de los endpoints PHP.
@@ -101,12 +103,18 @@ Import alias: `@/*` → raíz del proyecto (ver `tsconfig.json`).
 | `/servicios` | Listado de las líneas de negocio |
 | `/servicios/[slug]` | Detalle de cada línea de negocio (slugs definidos en `lib/services.ts`) |
 | `/portal/iniciar-sesion` | Inicio de sesión del portal |
+| `/portal/seleccionar-servicio` | Selector entre conteo y tickets para cuentas con ambos servicios |
 | `/portal/registro` | Solicitud de cuenta con aprobación manual |
 | `/portal/recuperar` | Recuperación de contraseña por código |
 | `/portal` | Panel del cliente y creación/seguimiento de tickets |
 | `/portal/tecnico` | Panel de bitácora para técnicos |
 | `/portal/administracion` | Asignación y gestión administrativa de tickets |
 | `/portal/administracion/sistema` | Usuarios, roles, tickets y correos |
+| `/conteo` | Panel privado del centro de conteo asignado a la cuenta autenticada |
+
+El botón **Iniciar sesión** usa las cuentas existentes del portal. Si una cuenta tiene
+`conteo_center_slug`, el inicio de sesión abre el selector de servicios; de lo contrario
+conserva el panel correspondiente a su rol. El navegador nunca elige el centro por URL.
 
 ## Portal de tickets
 
@@ -151,3 +159,5 @@ ni conexiones directas a la base MySQL.
 Deploy en **Vercel**. Configurar `PORTAL_API_BASE_URL` con la ruta pública de los
 endpoints PHP de Bluehost. El formulario utiliza `enviar.php`, y el portal requiere
 además las variables de sesión documentadas en `.env.local.example`.
+La consulta de conteos requiere el mismo token privado configurado, mediante su hash
+SHA-256, en `Api_Conteo`.

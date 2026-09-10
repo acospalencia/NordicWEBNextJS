@@ -15,6 +15,7 @@ import {
   type PortalApiEnvelope,
 } from "@/lib/portal/api";
 import { getAdminClientTickets } from "@/lib/portal/data";
+import { normalizePeopleCounterCenterSlug } from "@/lib/people-counter/centers";
 import {
   PORTAL_ROLES,
   TICKET_CATEGORIES,
@@ -82,10 +83,26 @@ export async function loginPortal(
       return failure(response.message ?? "Las credenciales introducidas son incorrectas.");
     }
 
+    const userId = Number(response.id_usuario);
     const role = Number(response.id_rol) as PortalRole;
+    const countCenterSlug = normalizePeopleCounterCenterSlug(
+      response.conteo_center_slug,
+    );
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return failure("El servicio de acceso no devolvió un usuario válido.");
+    }
     if (![1, 2, 3].includes(role)) return failure("La cuenta no tiene un rol válido.");
-    await setPortalSession({ userId: 0, name: username, role });
-    redirect(getPortalHome(role));
+    await setPortalSession({
+      userId,
+      name: String(response.nombre ?? username),
+      role,
+      countCenterSlug,
+    });
+    redirect(
+      countCenterSlug
+        ? "/portal/seleccionar-servicio"
+        : getPortalHome(role),
+    );
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     return apiFailure(error);
@@ -410,6 +427,7 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
       nombre: name,
       email,
       id_rol: role,
+      conteo_center_slug: value(formData, "conteo_center_slug"),
       verificado: value(formData, "verificado") === "1" ? 1 : 0,
       password,
     },

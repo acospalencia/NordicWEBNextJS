@@ -46,6 +46,9 @@ function normalizeApiUser(row: ApiRecord): PortalUser {
     id_rol: Number(row.id_rol ?? 1) as PortalUser["id_rol"],
     verificado: Number(row.verificado ?? 0),
     activo: Number(row.activo ?? 1),
+    conteo_center_slug: row.conteo_center_slug
+      ? String(row.conteo_center_slug)
+      : null,
     codigo_empresa: row.codigo_empresa ? String(row.codigo_empresa) : null,
     fecha_registro: row.fecha_registro ? String(row.fecha_registro) : null,
   };

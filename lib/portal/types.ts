@@ -10,6 +10,7 @@ export type PortalSession = {
   userId: number;
   name: string;
   role: PortalRole;
+  countCenterSlug: string | null;
   lastActivity: number;
 };
 
@@ -33,6 +34,7 @@ export type PortalUser = {
   id_rol: PortalRole;
   verificado: number;
   activo: number;
+  conteo_center_slug?: string | null;
   codigo_empresa?: string | null;
   fecha_registro?: string | null;
 };

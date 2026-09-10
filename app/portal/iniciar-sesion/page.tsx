@@ -6,21 +6,27 @@ import { LoginForm } from "@/components/portal/auth-forms";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 
 export const metadata: Metadata = {
-  title: "Tickets de Soporte — Nordictech",
-  description: "Acceso al sistema corporativo de tickets de Nordictech.",
+  title: "Iniciar sesión — Nordictech",
+  description: "Acceso a los servicios privados de Nordictech.",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalLoginPage() {
   const session = await getValidatedPortalSession();
-  if (session) redirect(getPortalHome(session.role));
+  if (session) {
+    redirect(
+      session.countCenterSlug
+        ? "/portal/seleccionar-servicio"
+        : getPortalHome(session.role),
+    );
+  }
 
   return (
     <PortalAuthShell
-      eyebrow="Tickets de Soporte"
-      title="Ingreso al sistema de tickets"
-      description="Gestiona tus solicitudes de soporte técnico de forma rápida y centralizada."
+      eyebrow="Portal Nordictech"
+      title="Iniciar sesión"
+      description="Accede con tu cuenta. Si tienes más de un servicio disponible, podrás elegir cuál deseas consultar."
       footer={
         <div className="flex flex-col items-center gap-3 text-sm text-[#94A3B8] sm:flex-row sm:justify-between">
           <Link href="/portal/recuperar" className="transition-colors hover:text-white">
