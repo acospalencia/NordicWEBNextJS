@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
+  Building2,
   CalendarDays,
   Camera,
   Clock3,
@@ -34,6 +35,34 @@ import {
 } from "@/lib/people-counter/types";
 
 type PeriodDays = 1 | 7 | 30;
+
+type CountCenter = {
+  slug: string;
+  name: string;
+  cameraCount: number;
+  onlineCameras: number;
+  lastSeenAt: string | null;
+  status: "online" | "offline" | "waiting";
+};
+
+function isCentersPayload(value: unknown): value is { centers: CountCenter[] } {
+  if (!value || typeof value !== "object" || !("centers" in value)) return false;
+  const centers = (value as { centers?: unknown }).centers;
+  return (
+    Array.isArray(centers) &&
+    centers.every(
+      (center) =>
+        !!center &&
+        typeof center === "object" &&
+        typeof center.slug === "string" &&
+        typeof center.name === "string" &&
+        typeof center.cameraCount === "number" &&
+        typeof center.onlineCameras === "number" &&
+        (center.lastSeenAt === null || typeof center.lastSeenAt === "string") &&
+        ["online", "offline", "waiting"].includes(String(center.status)),
+    )
+  );
+}
 
 const PERIODS: Array<{ days: PeriodDays; label: string }> = [
   { days: 1, label: "1 día" },
@@ -121,10 +150,14 @@ function Metric({
 }
 
 export function PeopleCounterDashboard({
-  centerName,
+  initialCenterSlug,
+  initialCenterName,
+  canSelectCenter,
   ticketsHref,
 }: {
-  centerName: string;
+  initialCenterSlug: string;
+  initialCenterName: string;
+  canSelectCenter: boolean;
   ticketsHref: string;
 }) {
   const router = useRouter();
@@ -134,14 +167,76 @@ export function PeopleCounterDashboard({
   const [startHour, setStartHour] = useState(0);
   const [endHour, setEndHour] = useState(23);
   const [activeReportDate, setActiveReportDate] = useState(today);
+  const [activeCenter, setActiveCenter] = useState(initialCenterSlug);
+  const [centers, setCenters] = useState<CountCenter[]>([]);
+  const [centersLoading, setCentersLoading] = useState(canSelectCenter);
+  const [centersError, setCentersError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
 
+  useEffect(() => {
+    if (!canSelectCenter) return;
+    let cancelled = false;
+
+    const loadCenters = async () => {
+      setCentersLoading(true);
+      try {
+        const response = await fetch("/api/conteo/centers", { cache: "no-store" });
+        const payload: unknown = await response.json();
+        if (response.status === 401) {
+          router.replace("/portal/iniciar-sesion");
+          return;
+        }
+        if (!response.ok) {
+          const message =
+            payload && typeof payload === "object" && "error" in payload
+              ? String(payload.error)
+              : "No fue posible cargar los centros de conteo.";
+          throw new Error(message);
+        }
+        if (!isCentersPayload(payload)) {
+          throw new Error("La API devolvió una lista de centros no válida.");
+        }
+        if (cancelled) return;
+        setCenters(payload.centers);
+        setActiveCenter((current) =>
+          payload.centers.some((center) => center.slug === current)
+            ? current
+            : (payload.centers[0]?.slug ?? ""),
+        );
+        setCentersError(
+          payload.centers.length === 0
+            ? "Todavía no hay centros de conteo activos registrados."
+            : null,
+        );
+      } catch (caught) {
+        if (!cancelled) {
+          setCentersError(
+            caught instanceof Error
+              ? caught.message
+              : "No fue posible cargar los centros de conteo.",
+          );
+        }
+      } finally {
+        if (!cancelled) setCentersLoading(false);
+      }
+    };
+
+    void loadCenters();
+    return () => {
+      cancelled = true;
+    };
+  }, [canSelectCenter, router]);
+
   const refresh = useCallback(
     async (quiet = false) => {
+      if (!activeCenter) {
+        if (!quiet) setLoading(false);
+        return;
+      }
       const currentRequest = ++requestId.current;
       if (!quiet) setLoading(true);
       const params = new URLSearchParams({
@@ -149,6 +244,7 @@ export function PeopleCounterDashboard({
         to: selectedDate,
         startHour: String(startHour),
         endHour: String(endHour),
+        center: activeCenter,
       });
       try {
         const response = await fetch(`/api/conteo/dashboard?${params}`, {
@@ -182,7 +278,7 @@ export function PeopleCounterDashboard({
         if (!quiet && currentRequest === requestId.current) setLoading(false);
       }
     },
-    [endHour, periodDays, router, selectedDate, startHour],
+    [activeCenter, endHour, periodDays, router, selectedDate, startHour],
   );
 
   useEffect(() => {
@@ -248,6 +344,8 @@ export function PeopleCounterDashboard({
   };
 
   const hoursLabel = `${String(startHour).padStart(2, "0")}:00–${String(endHour).padStart(2, "0")}:59`;
+  const activeCenterInfo = centers.find((center) => center.slug === activeCenter);
+  const centerName = activeCenterInfo?.name ?? initialCenterName;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#07111F] text-[#F5F7FA]">
@@ -281,6 +379,57 @@ export function PeopleCounterDashboard({
       </header>
 
       <div className="relative z-10 mx-auto max-w-[1500px] px-5 py-8 sm:px-8 lg:px-12 lg:py-12">
+        {canSelectCenter && (
+          <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-[#3B82F6]/25 bg-gradient-to-r from-[#0D2038] to-[#0A1626] p-5 shadow-[0_18px_50px_rgba(2,8,23,.25)] lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-[#3B82F6]/15 p-3 text-[#60A5FA] ring-1 ring-[#3B82F6]/25">
+                <Building2 className="size-5" />
+              </span>
+              <div>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[.2em] text-[#60A5FA]">
+                  Vista de administrador
+                </p>
+                <h2 className="mt-1 font-semibold text-white">Centro de conteo</h2>
+                <p className="mt-1 text-xs text-[#94A3B8]">
+                  Selecciona cualquier ubicación registrada en la API central.
+                </p>
+              </div>
+            </div>
+            <div className="min-w-0 lg:w-[430px]">
+              <select
+                value={activeCenter}
+                disabled={centersLoading || centers.length === 0}
+                onChange={(event) => {
+                  setActiveCenter(event.target.value);
+                  setDashboard(null);
+                  setError(null);
+                }}
+                aria-label="Seleccionar centro de conteo"
+                className="h-12 w-full rounded-xl border border-white/10 bg-[#07111F] px-4 text-sm font-semibold text-white outline-none transition-colors focus:border-[#3B82F6]/60 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {centersLoading && <option value="">Cargando centros…</option>}
+                {!centersLoading && centers.length === 0 && (
+                  <option value="">No hay centros disponibles</option>
+                )}
+                {centers.map((center) => (
+                  <option key={center.slug} value={center.slug}>
+                    {center.name} — {center.status === "online" ? "Recibiendo datos" : center.status === "offline" ? "Sin conexión reciente" : "Esperando datos"} ({center.onlineCameras}/{center.cameraCount})
+                  </option>
+                ))}
+              </select>
+              {activeCenterInfo && (
+                <p className="mt-2 text-right text-xs text-[#64748B]">
+                  {activeCenterInfo.status === "online"
+                    ? `${activeCenterInfo.onlineCameras} de ${activeCenterInfo.cameraCount} cámaras reportando`
+                    : activeCenterInfo.lastSeenAt
+                      ? `Último envío: ${formatDateTime(activeCenterInfo.lastSeenAt)}`
+                      : "El centro aún no ha enviado su primera lectura"}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
         <section className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[.2em] text-[#60A5FA]">{centerName}</p>
@@ -323,10 +472,10 @@ export function PeopleCounterDashboard({
           </div>
         </section>
 
-        {error && (
+        {(error || centersError) && (
           <div role="alert" className="mt-5 flex items-start gap-3 rounded-xl border border-rose-400/25 bg-rose-400/10 p-4 text-sm text-rose-200">
             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-            <div><strong>No se pudieron cargar los datos.</strong> {error}</div>
+            <div><strong>No se pudieron cargar los datos.</strong> {error ?? centersError}</div>
           </div>
         )}
 

@@ -99,7 +99,7 @@ export async function loginPortal(
       countCenterSlug,
     });
     redirect(
-      countCenterSlug
+      countCenterSlug || role === PORTAL_ROLES.ADMIN
         ? "/portal/seleccionar-servicio"
         : getPortalHome(role),
     );

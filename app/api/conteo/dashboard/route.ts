@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { normalizePeopleCounterCenterSlug } from "@/lib/people-counter/centers";
 import { getValidatedPortalSession } from "@/lib/portal/auth";
+import { PORTAL_ROLES } from "@/lib/portal/types";
 
 export const dynamic = "force-dynamic";
 
@@ -25,14 +27,36 @@ export async function GET(request: Request) {
         { status: 401 },
       );
     }
-    if (!session.countCenterSlug) {
+    const requested = new URL(request.url).searchParams;
+    const requestedCenterValue = requested.get("center");
+    const requestedCenter = normalizePeopleCounterCenterSlug(requestedCenterValue);
+    if (requestedCenterValue && !requestedCenter) {
       return NextResponse.json(
-        { error: "Tu cuenta no tiene un centro de conteo asignado." },
+        { error: "El centro solicitado no es válido." },
+        { status: 400 },
+      );
+    }
+    if (
+      session.role !== PORTAL_ROLES.ADMIN &&
+      requestedCenter &&
+      requestedCenter !== session.countCenterSlug
+    ) {
+      return NextResponse.json(
+        { error: "Tu cuenta no puede consultar ese centro." },
         { status: 403 },
       );
     }
+    const center =
+      session.role === PORTAL_ROLES.ADMIN
+        ? requestedCenter ?? session.countCenterSlug
+        : session.countCenterSlug;
+    if (!center) {
+      return NextResponse.json(
+        { error: "Selecciona un centro de conteo." },
+        { status: 400 },
+      );
+    }
 
-    const requested = new URL(request.url).searchParams;
     const from = requested.get("from") ?? "";
     const to = requested.get("to") ?? "";
     const startHour = requested.get("startHour") ?? "0";
@@ -44,7 +68,6 @@ export async function GET(request: Request) {
       );
     }
 
-    const center = session.countCenterSlug;
     const endpoint = new URL(
       `${apiBaseUrl()}/api/v1/people-counter/centers/${encodeURIComponent(center)}/dashboard`,
     );

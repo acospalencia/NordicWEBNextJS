@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { PortalAuthShell } from "@/components/portal/auth-shell";
 import { LoginForm } from "@/components/portal/auth-forms";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
+import { PORTAL_ROLES } from "@/lib/portal/types";
 
 export const metadata: Metadata = {
   title: "Iniciar sesión — Nordictech",
@@ -16,7 +17,7 @@ export default async function PortalLoginPage() {
   const session = await getValidatedPortalSession();
   if (session) {
     redirect(
-      session.countCenterSlug
+      session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN
         ? "/portal/seleccionar-servicio"
         : getPortalHome(session.role),
     );

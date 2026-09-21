@@ -5,6 +5,7 @@ import { ArrowRight, BarChart3, TicketCheck } from "lucide-react";
 import { PortalShell } from "@/components/portal/portal-shell";
 import { getPeopleCounterCenterName } from "@/lib/people-counter/centers";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
+import { PORTAL_ROLES } from "@/lib/portal/types";
 
 export const metadata: Metadata = {
   title: "Seleccionar servicio — Nordictech",
@@ -17,10 +18,15 @@ export const dynamic = "force-dynamic";
 export default async function ServiceSelectorPage() {
   const session = await getValidatedPortalSession();
   if (!session) redirect("/portal/iniciar-sesion");
-  if (!session.countCenterSlug) redirect(getPortalHome(session.role));
+  const canSelectCenter = session.role === PORTAL_ROLES.ADMIN;
+  if (!session.countCenterSlug && !canSelectCenter) {
+    redirect(getPortalHome(session.role));
+  }
 
   const ticketHome = getPortalHome(session.role);
-  const centerName = getPeopleCounterCenterName(session.countCenterSlug);
+  const centerName = session.countCenterSlug
+    ? getPeopleCounterCenterName(session.countCenterSlug)
+    : "todos los centros registrados";
 
   return (
     <PortalShell session={session}>
@@ -48,7 +54,11 @@ export default async function ServiceSelectorPage() {
               icon={BarChart3}
               eyebrow="Afluencia"
               title="Conteo de personas"
-              description={`Consulta entradas, salidas y reportes de ${centerName}.`}
+              description={
+                canSelectCenter
+                  ? "Selecciona cualquier centro registrado y consulta su actividad en tiempo real."
+                  : `Consulta entradas, salidas y reportes de ${centerName}.`
+              }
               accent="blue"
             />
             <ServiceCard

@@ -42,7 +42,7 @@ export function PortalShell({
           </div>
 
           <nav className="flex items-center gap-2" aria-label="Navegación del portal">
-            {session.countCenterSlug && (
+            {(session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN) && (
               <Link
                 href="/conteo"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"
