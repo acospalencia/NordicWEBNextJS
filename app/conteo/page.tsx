@@ -16,7 +16,9 @@ export const dynamic = "force-dynamic";
 export default async function ConteoPage() {
   const session = await getValidatedPortalSession();
   if (!session) redirect("/portal/iniciar-sesion");
-  const canSelectCenter = session.role === PORTAL_ROLES.ADMIN;
+  const canSelectCenter =
+    session.role === PORTAL_ROLES.ADMIN ||
+    session.role === PORTAL_ROLES.COUNT_ADMIN;
   if (!session.countCenterSlug && !canSelectCenter) {
     redirect(getPortalHome(session.role));
   }
@@ -30,7 +32,11 @@ export default async function ConteoPage() {
           : "Selecciona un centro"
       }
       canSelectCenter={canSelectCenter}
-      ticketsHref={getPortalHome(session.role)}
+      ticketsHref={
+        session.role === PORTAL_ROLES.COUNT_ADMIN
+          ? null
+          : getPortalHome(session.role)
+      }
     />
   );
 }

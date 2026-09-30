@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PortalShell } from "@/components/portal/portal-shell";
 import { SystemDashboard } from "@/components/portal/system-dashboard";
+import { getPeopleCounterCenterOptions } from "@/lib/people-counter/api";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 import { PortalApiSessionError } from "@/lib/portal/api";
 import { getSystemData } from "@/lib/portal/data";
@@ -21,10 +22,17 @@ export default async function PortalSystemPage() {
     if (error instanceof PortalApiSessionError) redirect("/portal/cerrar-sesion");
     throw error;
   }
+  const countCenters = await getPeopleCounterCenterOptions();
 
   return (
     <PortalShell session={session}>
-      <SystemDashboard users={data.users} tickets={data.tickets} emails={data.emails} metrics={data.metrics} />
+      <SystemDashboard
+        users={data.users}
+        tickets={data.tickets}
+        emails={data.emails}
+        metrics={data.metrics}
+        countCenters={countCenters}
+      />
     </PortalShell>
   );
 }

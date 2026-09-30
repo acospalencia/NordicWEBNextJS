@@ -2,6 +2,7 @@ export const PORTAL_ROLES = {
   CLIENT: 1,
   TECHNICIAN: 2,
   ADMIN: 3,
+  COUNT_ADMIN: 4,
 } as const;
 
 export type PortalRole = (typeof PORTAL_ROLES)[keyof typeof PORTAL_ROLES];

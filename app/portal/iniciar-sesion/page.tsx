@@ -17,9 +17,11 @@ export default async function PortalLoginPage() {
   const session = await getValidatedPortalSession();
   if (session) {
     redirect(
-      session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN
-        ? "/portal/seleccionar-servicio"
-        : getPortalHome(session.role),
+      session.role === PORTAL_ROLES.COUNT_ADMIN
+        ? "/conteo"
+        : session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN
+          ? "/portal/seleccionar-servicio"
+          : getPortalHome(session.role),
     );
   }
 

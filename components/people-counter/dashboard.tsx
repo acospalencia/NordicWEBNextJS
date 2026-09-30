@@ -158,7 +158,7 @@ export function PeopleCounterDashboard({
   initialCenterSlug: string;
   initialCenterName: string;
   canSelectCenter: boolean;
-  ticketsHref: string;
+  ticketsHref: string | null;
 }) {
   const router = useRouter();
   const [today] = useState(todayInElSalvador);
@@ -368,9 +368,11 @@ export function PeopleCounterDashboard({
             <span className="hidden items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 sm:inline-flex">
               <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" /> Datos centralizados
             </span>
-            <a href={ticketsHref} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[.03] px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:bg-[#3B82F6]/10 hover:text-white">
-              <TicketCheck className="size-4" /> <span className="hidden sm:inline">Tickets</span>
-            </a>
+            {ticketsHref && (
+              <a href={ticketsHref} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[.03] px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:bg-[#3B82F6]/10 hover:text-white">
+                <TicketCheck className="size-4" /> <span className="hidden sm:inline">Tickets</span>
+              </a>
+            )}
             <a href="/portal/cerrar-sesion" className="inline-flex items-center gap-2 rounded-lg bg-[#3B82F6] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#60A5FA]">
               <LogOut className="size-4" /> <span className="hidden sm:inline">Cerrar sesión</span>
             </a>

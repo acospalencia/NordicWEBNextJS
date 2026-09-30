@@ -24,9 +24,12 @@ export async function GET() {
         { status: 401 },
       );
     }
-    if (session.role !== PORTAL_ROLES.ADMIN) {
+    if (
+      session.role !== PORTAL_ROLES.ADMIN &&
+      session.role !== PORTAL_ROLES.COUNT_ADMIN
+    ) {
       return NextResponse.json(
-        { error: "Solo un administrador puede consultar todos los centros." },
+        { error: "Tu cuenta no puede consultar todos los centros." },
         { status: 403 },
       );
     }

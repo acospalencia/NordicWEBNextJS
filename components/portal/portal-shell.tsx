@@ -9,6 +9,7 @@ const ROLE_NAMES = {
   [PORTAL_ROLES.CLIENT]: "Cliente",
   [PORTAL_ROLES.TECHNICIAN]: "Técnico",
   [PORTAL_ROLES.ADMIN]: "Administrador",
+  [PORTAL_ROLES.COUNT_ADMIN]: "Administrador de conteo",
 };
 
 export function PortalShell({
@@ -42,7 +43,9 @@ export function PortalShell({
           </div>
 
           <nav className="flex items-center gap-2" aria-label="Navegación del portal">
-            {(session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN) && (
+            {(session.countCenterSlug ||
+              session.role === PORTAL_ROLES.ADMIN ||
+              session.role === PORTAL_ROLES.COUNT_ADMIN) && (
               <Link
                 href="/conteo"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"

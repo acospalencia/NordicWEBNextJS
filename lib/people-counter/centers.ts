@@ -1,10 +1,19 @@
+export type PeopleCounterCenterOption = {
+  slug: string;
+  name: string;
+};
+
 export const PEOPLE_COUNTER_CENTERS = [
   { slug: "bambu", name: "Centro Comercial Bambú" },
   {
     slug: "el-encuentro-sonsonate",
     name: "CC El Encuentro Sonsonate",
   },
-] as const;
+  {
+    slug: "el-encuentro-el-sitio",
+    name: "CC El Encuentro El Sitio",
+  },
+] as const satisfies readonly PeopleCounterCenterOption[];
 
 const CENTER_SLUG_PATTERN = /^[a-z0-9-]{2,64}$/;
 

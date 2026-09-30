@@ -91,7 +91,7 @@ export async function loginPortal(
     if (!Number.isInteger(userId) || userId <= 0) {
       return failure("El servicio de acceso no devolvió un usuario válido.");
     }
-    if (![1, 2, 3].includes(role)) return failure("La cuenta no tiene un rol válido.");
+    if (![1, 2, 3, 4].includes(role)) return failure("La cuenta no tiene un rol válido.");
     await setPortalSession({
       userId,
       name: String(response.nombre ?? username),
@@ -99,9 +99,11 @@ export async function loginPortal(
       countCenterSlug,
     });
     redirect(
-      countCenterSlug || role === PORTAL_ROLES.ADMIN
-        ? "/portal/seleccionar-servicio"
-        : getPortalHome(role),
+      role === PORTAL_ROLES.COUNT_ADMIN
+        ? "/conteo"
+        : countCenterSlug || role === PORTAL_ROLES.ADMIN
+          ? "/portal/seleccionar-servicio"
+          : getPortalHome(role),
     );
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
@@ -417,7 +419,7 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
   const email = value(formData, "email").toLowerCase();
   const role = Number(value(formData, "id_rol"));
   const password = String(formData.get("password") ?? "");
-  if (!name || !EMAIL_RE.test(email) || ![1, 2, 3].includes(role)) {
+  if (!name || !EMAIL_RE.test(email) || ![1, 2, 3, 4].includes(role)) {
     return failure("Completá correctamente los datos del usuario.");
   }
   return runSystemAction(

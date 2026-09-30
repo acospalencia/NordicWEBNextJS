@@ -10,7 +10,7 @@ import {
   togglePortalUser,
 } from "@/app/portal/actions";
 import { ActionNotice, formatPortalDate, ticketStatusClass } from "@/components/portal/ticket-ui";
-import { PEOPLE_COUNTER_CENTERS } from "@/lib/people-counter/centers";
+import type { PeopleCounterCenterOption } from "@/lib/people-counter/centers";
 import {
   TICKET_PRIORITIES,
   TICKET_STATUSES,
@@ -27,6 +27,7 @@ export function SystemDashboard({
   tickets,
   emails,
   metrics,
+  countCenters,
 }: {
   users: PortalUser[];
   tickets: PortalTicket[];
@@ -38,6 +39,7 @@ export function SystemDashboard({
     tickets_cerrados: number;
     correos_pendientes: number;
   };
+  countCenters: readonly PeopleCounterCenterOption[];
 }) {
   const [tab, setTab] = useState<SystemTab>("usuarios");
   const [query, setQuery] = useState("");
@@ -109,7 +111,7 @@ export function SystemDashboard({
               <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-[#60A5FA] marker:hidden">
                 <UserPlus className="size-4" /> Crear nuevo usuario
               </summary>
-              <UserForm isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
+              <UserForm countCenters={countCenters} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
             </details>
             {visibleUsers.map((user) => (
               <details key={user.id_usuario} className={`rounded-xl border p-5 ${user.activo ? "border-white/10 bg-[#0A1626]" : "border-white/5 bg-[#0A1626]/45 opacity-75"}`}>
@@ -123,11 +125,11 @@ export function SystemDashboard({
                       <span className="rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-2.5 py-1 text-[#60A5FA]">{roleName(user.id_rol)}</span>
                       <span className={`rounded-full border px-2.5 py-1 ${user.verificado ? "border-emerald-500/25 text-emerald-300" : "border-amber-500/25 text-amber-300"}`}>{user.verificado ? "Verificado" : "Pendiente"}</span>
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[#94A3B8]">{user.activo ? "Activo" : "Inactivo"}</span>
-                      {user.conteo_center_slug && <span className="rounded-full border border-cyan-400/25 bg-cyan-400/10 px-2.5 py-1 text-cyan-200">Conteo: {PEOPLE_COUNTER_CENTERS.find((center) => center.slug === user.conteo_center_slug)?.name ?? user.conteo_center_slug}</span>}
+                      {user.conteo_center_slug && <span className="rounded-full border border-cyan-400/25 bg-cyan-400/10 px-2.5 py-1 text-cyan-200">Conteo: {countCenters.find((center) => center.slug === user.conteo_center_slug)?.name ?? user.conteo_center_slug}</span>}
                     </div>
                   </div>
                 </summary>
-                <UserForm user={user} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
+                <UserForm user={user} countCenters={countCenters} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
                 <form action={(formData) => runAction(togglePortalUser, formData)} className="mt-4 border-t border-white/10 pt-4">
                   <input type="hidden" name="id_usuario" value={user.id_usuario} />
                   <input type="hidden" name="activo" value={user.activo ? "0" : "1"} />
@@ -192,14 +194,14 @@ export function SystemDashboard({
   );
 }
 
-function UserForm({ user, isPending, onAction }: { user?: PortalUser; isPending: boolean; onAction: (formData: FormData) => void }) {
+function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUser; countCenters: readonly PeopleCounterCenterOption[]; isPending: boolean; onAction: (formData: FormData) => void }) {
   return (
     <form action={onAction} className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-7 xl:items-end">
       <input type="hidden" name="id_usuario" value={user?.id_usuario ?? ""} />
       <SystemField label="Nombre"><input name="nombre" defaultValue={user?.nombre} required className="portal-input" /></SystemField>
       <SystemField label="Correo"><input name="email" type="email" defaultValue={user?.email} required className="portal-input" /></SystemField>
-      <SystemField label="Rol"><select name="id_rol" defaultValue={user?.id_rol ?? 1} className="portal-input"><option value="1">Cliente</option><option value="2">Técnico</option><option value="3">Administrador</option></select></SystemField>
-      <SystemField label="Centro de conteo"><select name="conteo_center_slug" defaultValue={user?.conteo_center_slug ?? ""} className="portal-input"><option value="">Sin acceso</option>{PEOPLE_COUNTER_CENTERS.map((center) => <option key={center.slug} value={center.slug}>{center.name}</option>)}</select></SystemField>
+      <SystemField label="Rol"><select name="id_rol" defaultValue={user?.id_rol ?? 1} className="portal-input"><option value="1">Cliente</option><option value="2">Técnico</option><option value="3">Administrador</option><option value="4">Administrador de conteo</option></select></SystemField>
+      <SystemField label="Centro de conteo"><select name="conteo_center_slug" defaultValue={user?.conteo_center_slug ?? ""} className="portal-input"><option value="">Sin acceso</option>{countCenters.map((center) => <option key={center.slug} value={center.slug}>{center.name}</option>)}</select></SystemField>
       <SystemField label="Aprobación"><select name="verificado" defaultValue={user?.verificado ?? 1} className="portal-input"><option value="1">Verificado</option><option value="0">Pendiente</option></select></SystemField>
       <SystemField label={user ? "Nueva contraseña" : "Contraseña"}><input name="password" type="password" minLength={8} required={!user} className="portal-input" placeholder={user ? "Opcional" : "Mínimo 8 caracteres"} /></SystemField>
       <button disabled={isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#3B82F6] px-4 text-xs font-semibold text-white hover:bg-[#60A5FA] disabled:opacity-50">{isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} Guardar</button>
@@ -217,6 +219,7 @@ function Metric({ label, value }: { label: string; value: number }) {
 
 function roleName(role: number) {
   if (role === 3) return "Administrador";
+  if (role === 4) return "Administrador de conteo";
   if (role === 2) return "Técnico";
   return "Cliente";
 }

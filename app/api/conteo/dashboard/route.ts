@@ -30,6 +30,9 @@ export async function GET(request: Request) {
     const requested = new URL(request.url).searchParams;
     const requestedCenterValue = requested.get("center");
     const requestedCenter = normalizePeopleCounterCenterSlug(requestedCenterValue);
+    const canSelectCenter =
+      session.role === PORTAL_ROLES.ADMIN ||
+      session.role === PORTAL_ROLES.COUNT_ADMIN;
     if (requestedCenterValue && !requestedCenter) {
       return NextResponse.json(
         { error: "El centro solicitado no es válido." },
@@ -37,7 +40,7 @@ export async function GET(request: Request) {
       );
     }
     if (
-      session.role !== PORTAL_ROLES.ADMIN &&
+      !canSelectCenter &&
       requestedCenter &&
       requestedCenter !== session.countCenterSlug
     ) {
@@ -47,7 +50,7 @@ export async function GET(request: Request) {
       );
     }
     const center =
-      session.role === PORTAL_ROLES.ADMIN
+      canSelectCenter
         ? requestedCenter ?? session.countCenterSlug
         : session.countCenterSlug;
     if (!center) {

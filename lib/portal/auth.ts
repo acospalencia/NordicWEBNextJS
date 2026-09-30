@@ -41,7 +41,7 @@ function decodeSession(value: string): PortalSession | null {
       !Number.isInteger(session.userId) ||
       session.userId <= 0 ||
       !session.name ||
-      ![1, 2, 3].includes(session.role) ||
+      ![1, 2, 3, 4].includes(session.role) ||
       (session.countCenterSlug !== null &&
         normalizePeopleCounterCenterSlug(session.countCenterSlug) !== session.countCenterSlug) ||
       !Number.isFinite(session.lastActivity)
@@ -101,5 +101,6 @@ export async function requirePortalActionSession(roles?: PortalRole[]) {
 export function getPortalHome(role: PortalRole) {
   if (role === 3) return "/portal/administracion";
   if (role === 2) return "/portal/tecnico";
+  if (role === 4) return "/conteo";
   return "/portal";
 }

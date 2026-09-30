@@ -18,6 +18,7 @@ export const dynamic = "force-dynamic";
 export default async function ServiceSelectorPage() {
   const session = await getValidatedPortalSession();
   if (!session) redirect("/portal/iniciar-sesion");
+  if (session.role === PORTAL_ROLES.COUNT_ADMIN) redirect("/conteo");
   const canSelectCenter = session.role === PORTAL_ROLES.ADMIN;
   if (!session.countCenterSlug && !canSelectCenter) {
     redirect(getPortalHome(session.role));
