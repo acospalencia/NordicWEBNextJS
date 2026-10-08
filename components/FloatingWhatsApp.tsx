@@ -5,8 +5,24 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import { WhatsAppIcon } from "@/components/WhatsAppLink";
 
-const WHATSAPP_HREF = "https://wa.me/50377370032";
+const WHATSAPP_CONTACTS = ["50377927407", "50378314788"] as const;
+const WHATSAPP_CONTACT_SESSION_KEY = "nordictech-whatsapp-contact";
 const defaultMessage = "Hola, quisiera más información sobre sus servicios.";
+
+function chooseWhatsAppContact() {
+  try {
+    const storedContact = window.sessionStorage.getItem(WHATSAPP_CONTACT_SESSION_KEY);
+    const assignedContact = WHATSAPP_CONTACTS.find((contact) => contact === storedContact);
+
+    if (assignedContact) return assignedContact;
+
+    const contact = Math.random() < 0.5 ? WHATSAPP_CONTACTS[0] : WHATSAPP_CONTACTS[1];
+    window.sessionStorage.setItem(WHATSAPP_CONTACT_SESSION_KEY, contact);
+    return contact;
+  } catch {
+    return Math.random() < 0.5 ? WHATSAPP_CONTACTS[0] : WHATSAPP_CONTACTS[1];
+  }
+}
 
 /**
  * Two touches borrowed from react-floating-whatsapp's README (unmaintained
@@ -72,7 +88,12 @@ export function FloatingWhatsApp() {
 
   function send() {
     const text = message.trim() || defaultMessage;
-    window.open(`${WHATSAPP_HREF}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    const contact = chooseWhatsAppContact();
+    window.open(
+      `https://wa.me/${contact}?text=${encodeURIComponent(text)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
     setOpen(false);
     setMessage("");
   }
