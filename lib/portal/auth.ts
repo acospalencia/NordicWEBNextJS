@@ -3,10 +3,14 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { normalizePeopleCounterCenterSlug } from "@/lib/people-counter/centers";
-import type { PortalRole, PortalSession } from "@/lib/portal/types";
+import { renewPortalApiSessionCookie } from "@/lib/portal/api";
+import {
+  portalSessionMaxAgeSeconds,
+  type PortalRole,
+  type PortalSession,
+} from "@/lib/portal/types";
 
 const SESSION_COOKIE = "nordictech_portal_session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60;
 
 function getSessionSecret() {
   const secret = process.env.PORTAL_SESSION_SECRET;
@@ -48,7 +52,9 @@ function decodeSession(value: string): PortalSession | null {
     ) {
       return null;
     }
-    if (Date.now() - session.lastActivity >= SESSION_MAX_AGE_SECONDS * 1000) return null;
+    if (Date.now() - session.lastActivity >= portalSessionMaxAgeSeconds(session.role) * 1000) {
+      return null;
+    }
     return session;
   } catch {
     return null;
@@ -73,7 +79,7 @@ export async function setPortalSession(session: Omit<PortalSession, "lastActivit
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
+    maxAge: portalSessionMaxAgeSeconds(session.role),
   });
 }
 
@@ -94,7 +100,7 @@ export async function clearPortalSession() {
 export async function requirePortalActionSession(roles?: PortalRole[]) {
   const session = await getValidatedPortalSession();
   if (!session || (roles && !roles.includes(session.role))) return null;
-  await renewPortalSession(session);
+  await Promise.all([renewPortalSession(session), renewPortalApiSessionCookie(session.role)]);
   return session;
 }
 

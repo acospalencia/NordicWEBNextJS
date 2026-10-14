@@ -30,6 +30,11 @@ export function normalizeApiTicket(row: ApiRecord): PortalTicket {
     observacion_cierre: row.observacion_cierre ? String(row.observacion_cierre) : null,
     fecha_creacion: String(row.fecha_creacion ?? row.fecha ?? ""),
     fecha_actualizacion: row.fecha_actualizacion ? String(row.fecha_actualizacion) : null,
+    fecha_cierre: row.fecha_cierre
+      ? String(row.fecha_cierre)
+      : row.fecha_resolucion
+        ? String(row.fecha_resolucion)
+        : null,
     activo: Number(row.activo ?? 1),
     cliente_nombre: row.cliente_nombre ?? row.cliente ? String(row.cliente_nombre ?? row.cliente) : null,
     cliente_email: row.cliente_email ? String(row.cliente_email) : null,
@@ -104,10 +109,22 @@ export async function getSystemData() {
   assertPortalApiSuccess(response);
   const data = (response.data ?? {}) as ApiRecord;
   const metric = (data.metricas ?? {}) as ApiRecord;
+  const users = array(data.usuarios).map(normalizeApiUser);
+  const usersByName = new Map(
+    users.map((user) => [user.nombre.trim().toLocaleLowerCase("es"), user])
+  );
+  const tickets = array(data.tickets).map((row) => {
+    const ticket = normalizeApiTicket(row);
+    if (ticket.id_usuario > 0 || !ticket.cliente_nombre) return ticket;
+    const client = usersByName.get(ticket.cliente_nombre.trim().toLocaleLowerCase("es"));
+    return client
+      ? { ...ticket, id_usuario: client.id_usuario, cliente_email: client.email }
+      : ticket;
+  });
 
   return {
-    users: array(data.usuarios).map(normalizeApiUser),
-    tickets: array(data.tickets).map(normalizeApiTicket),
+    users,
+    tickets,
     emails: array(data.cola).map(
       (row): PortalEmailQueueItem => ({
         id_correo: Number(row.id_correo),
@@ -127,4 +144,33 @@ export async function getSystemData() {
       correos_pendientes: Number(metric.correos_pendientes ?? 0),
     },
   };
+}
+
+export async function getAdminReportData() {
+  const directory = await getAdminDirectory();
+  const clients = directory.clients.filter((client) => client.activo === 1);
+  const tickets: PortalTicket[] = [];
+  const batchSize = 6;
+
+  for (let index = 0; index < clients.length; index += batchSize) {
+    const batch = clients.slice(index, index + batchSize);
+    const results = await Promise.all(
+      batch.map(async (client) => ({
+        client,
+        tickets: await getAdminClientTickets(client.id_usuario),
+      }))
+    );
+    results.forEach(({ client, tickets: clientTickets }) => {
+      clientTickets.forEach((ticket) => {
+        tickets.push({
+          ...ticket,
+          activo: ticket.activo ?? 1,
+          cliente_nombre: client.nombre,
+          cliente_email: client.email,
+        });
+      });
+    });
+  }
+
+  return { clients, tickets };
 }

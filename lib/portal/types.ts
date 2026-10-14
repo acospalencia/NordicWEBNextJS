@@ -7,6 +7,15 @@ export const PORTAL_ROLES = {
 
 export type PortalRole = (typeof PORTAL_ROLES)[keyof typeof PORTAL_ROLES];
 
+export const STANDARD_SESSION_MAX_AGE_SECONDS = 60 * 60;
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
+export function portalSessionMaxAgeSeconds(role: PortalRole) {
+  return role === PORTAL_ROLES.ADMIN
+    ? ADMIN_SESSION_MAX_AGE_SECONDS
+    : STANDARD_SESSION_MAX_AGE_SECONDS;
+}
+
 export type PortalSession = {
   userId: number;
   name: string;
@@ -54,6 +63,7 @@ export type PortalTicket = {
   observacion_cierre: string | null;
   fecha_creacion: string;
   fecha_actualizacion: string | null;
+  fecha_cierre?: string | null;
   activo: number;
   cliente_nombre?: string | null;
   cliente_email?: string | null;

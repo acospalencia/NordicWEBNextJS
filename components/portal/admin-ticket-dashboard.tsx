@@ -1,7 +1,17 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { CirclePlus, Loader2, Mail, Menu, Search, UserRoundCheck, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  BellRing,
+  CirclePlus,
+  Loader2,
+  Mail,
+  Menu,
+  Search,
+  UserRoundCheck,
+  X,
+} from "lucide-react";
 import {
   assignTechnician,
   createTicketAsAdmin,
@@ -29,26 +39,81 @@ type AdminModal =
   | { kind: "status"; ticket: PortalTicket; status: AdminStatus }
   | null;
 
+type TicketToast = {
+  ticket: PortalTicket;
+  clientName: string;
+};
+
+type ClientCounts = { open: number; progress: number; closed: number };
+
+function emptyCounts(): ClientCounts {
+  return { open: 0, progress: 0, closed: 0 };
+}
+
+function playTicketTone() {
+  const AudioContextClass = window.AudioContext;
+  if (!AudioContextClass) return;
+  const context = new AudioContextClass();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(880, context.currentTime);
+  oscillator.frequency.exponentialRampToValueAtTime(1174, context.currentTime + 0.12);
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.25);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.26);
+  oscillator.addEventListener("ended", () => void context.close(), { once: true });
+}
+
+function useDebouncedValue(value: string, delay = 250) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [delay, value]);
+  return debounced;
+}
+
 export function AdminTicketDashboard({
   clients,
   technicians,
   initialTickets,
+  initialTicketIndex,
 }: {
   clients: PortalUser[];
   technicians: PortalUser[];
   initialTickets: PortalTicket[];
+  initialTicketIndex: PortalTicket[];
 }) {
+  const router = useRouter();
   const [clientId, setClientId] = useState(clients[0]?.id_usuario ?? 0);
   const [tickets, setTickets] = useState(initialTickets);
+  const [ticketIndex, setTicketIndex] = useState(initialTicketIndex);
   const [tab, setTab] = useState<AdminTab>("Abierto");
   const [clientQuery, setClientQuery] = useState("");
+  const [ticketQuery, setTicketQuery] = useState("");
+  const debouncedTicketQuery = useDebouncedValue(ticketQuery);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modal, setModal] = useState<AdminModal>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [notice, setNotice] = useState<{ status: "success" | "error"; message: string } | null>(null);
+  const [toasts, setToasts] = useState<TicketToast[]>([]);
   const [isPending, startTransition] = useTransition();
+  const notifiedTicketIds = useRef(
+    new Set(initialTicketIndex.filter((ticket) => ticket.activo === 1).map((ticket) => ticket.id_ticket))
+  );
+  const soundReady = useRef(false);
+  const toastTimers = useRef<number[]>([]);
 
   const activeClient = clients.find((client) => client.id_usuario === clientId);
+  const clientsById = useMemo(
+    () => new Map(clients.map((client) => [client.id_usuario, client])),
+    [clients]
+  );
   const visibleClients = useMemo(() => {
     const search = clientQuery.trim().toLowerCase();
     if (!search) return clients;
@@ -57,19 +122,51 @@ export function AdminTicketDashboard({
     );
   }, [clientQuery, clients]);
 
+  const clientCounts = useMemo(() => {
+    const totals = new Map<number, ClientCounts>();
+    ticketIndex.forEach((ticket) => {
+      if (ticket.activo !== 1 || ticket.id_usuario <= 0) return;
+      const current = totals.get(ticket.id_usuario) ?? emptyCounts();
+      if (ticket.estado === "Abierto") current.open += 1;
+      else if (ticket.estado === "En Proceso") current.progress += 1;
+      else if (ticket.estado === "Cerrado" || ticket.estado === "Resuelto") current.closed += 1;
+      totals.set(ticket.id_usuario, current);
+    });
+    return totals;
+  }, [ticketIndex]);
+
+  const selectedCounts = clientCounts.get(clientId) ?? emptyCounts();
   const counts = {
-    Abierto: tickets.filter((ticket) => ticket.estado === "Abierto").length,
-    "En Proceso": tickets.filter((ticket) => ticket.estado === "En Proceso").length,
-    Cerrado: tickets.filter((ticket) => ["Cerrado", "Resuelto"].includes(ticket.estado)).length,
+    Abierto: selectedCounts.open,
+    "En Proceso": selectedCounts.progress,
+    Cerrado: selectedCounts.closed,
   };
 
-  const visibleTickets = tickets.filter((ticket) =>
-    tab === "Cerrado"
-      ? ticket.estado === "Cerrado" || ticket.estado === "Resuelto"
-      : ticket.estado === tab
-  );
+  const visibleTickets = useMemo(() => {
+    return tickets.filter((ticket) => {
+      const inTab =
+        tab === "Cerrado"
+          ? ticket.estado === "Cerrado" || ticket.estado === "Resuelto"
+          : ticket.estado === tab;
+      return inTab;
+    });
+  }, [tab, tickets]);
 
-  async function loadClientTickets(nextClientId: number) {
+  const ticketSearchResults = useMemo(() => {
+    const query = debouncedTicketQuery.trim().toLocaleLowerCase("es");
+    if (!query) return [];
+    return ticketIndex
+      .filter((ticket) => {
+        if (ticket.activo !== 1) return false;
+        const client = clientsById.get(ticket.id_usuario);
+        return `#tk-${ticket.id_ticket} tk-${ticket.id_ticket} ${ticket.id_ticket} ${ticket.titulo} ${ticket.cliente_nombre ?? client?.nombre ?? ""} ${client?.codigo_empresa ?? ""}`
+          .toLocaleLowerCase("es")
+          .includes(query);
+      })
+      .slice(0, 50);
+  }, [clientsById, debouncedTicketQuery, ticketIndex]);
+
+  const loadClientTickets = useCallback(async (nextClientId: number) => {
     const result = await getAdminTicketsForClient(nextClientId);
     if (result.status === "success") {
       setTickets(result.tickets);
@@ -77,7 +174,90 @@ export function AdminTicketDashboard({
     }
     setTickets([]);
     setNotice({ status: "error", message: result.message ?? "No fue posible cargar los tickets." });
-  }
+  }, []);
+
+  const refreshTicketIndex = useCallback(
+    async (notify = true) => {
+      const response = await fetch("/api/portal/admin/tickets", { cache: "no-store" });
+      if (response.status === 401) {
+        router.replace("/portal/iniciar-sesion");
+        return;
+      }
+      if (!response.ok) return;
+      const payload: unknown = await response.json();
+      if (!payload || typeof payload !== "object" || !("tickets" in payload)) return;
+      const nextTickets = (payload as { tickets?: unknown }).tickets;
+      if (!Array.isArray(nextTickets)) return;
+
+      const normalized = nextTickets.filter(
+        (ticket): ticket is PortalTicket =>
+          !!ticket &&
+          typeof ticket === "object" &&
+          Number.isInteger(Number((ticket as PortalTicket).id_ticket))
+      );
+      const freshTickets = notify
+        ? normalized.filter(
+            (ticket) =>
+              ticket.activo === 1 && !notifiedTicketIds.current.has(ticket.id_ticket)
+          )
+        : [];
+
+      normalized.forEach((ticket) => notifiedTicketIds.current.add(ticket.id_ticket));
+      setTicketIndex(normalized);
+
+      if (freshTickets.length) {
+        const nextToasts = freshTickets.map((ticket) => ({
+          ticket,
+          clientName: ticket.cliente_nombre ?? "Cliente sin nombre",
+        }));
+        setToasts((current) => [...current, ...nextToasts].slice(-4));
+        freshTickets.forEach((ticket, index) => {
+          if (soundReady.current) {
+            toastTimers.current.push(
+              window.setTimeout(() => playTicketTone(), index * 300)
+            );
+          }
+          toastTimers.current.push(
+            window.setTimeout(() => {
+              setToasts((current) =>
+                current.filter((toast) => toast.ticket.id_ticket !== ticket.id_ticket)
+              );
+            }, 8000 + index * 300)
+          );
+        });
+        if (freshTickets.some((ticket) => ticket.id_usuario === clientId)) {
+          await loadClientTickets(clientId);
+        }
+      }
+    },
+    [clientId, loadClientTickets, router]
+  );
+
+  useEffect(() => {
+    const enableSound = () => {
+      soundReady.current = true;
+    };
+    window.addEventListener("pointerdown", enableSound, { once: true });
+    window.addEventListener("keydown", enableSound, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", enableSound);
+      window.removeEventListener("keydown", enableSound);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void refreshTicketIndex(true);
+    }, 20_000);
+    return () => window.clearInterval(timer);
+  }, [refreshTicketIndex]);
+
+  useEffect(
+    () => () => {
+      toastTimers.current.forEach((timer) => window.clearTimeout(timer));
+    },
+    []
+  );
 
   function selectClient(nextClientId: number) {
     if (nextClientId === clientId) {
@@ -87,6 +267,7 @@ export function AdminTicketDashboard({
     setClientId(nextClientId);
     setTickets([]);
     setTab("Abierto");
+    setTicketQuery("");
     setNotice(null);
     setSidebarOpen(false);
     startTransition(async () => {
@@ -106,6 +287,7 @@ export function AdminTicketDashboard({
       });
       if (result.status === "success" && clientId > 0) {
         await loadClientTickets(clientId);
+        await refreshTicketIndex(false);
         setModal(null);
       }
     });
@@ -123,8 +305,48 @@ export function AdminTicketDashboard({
         setClientId(targetClientId);
         setTab("Abierto");
         await loadClientTickets(targetClientId);
+        await refreshTicketIndex(false);
         setCreateOpen(false);
       }
+    });
+  }
+
+  function openTicketFromToast(toast: TicketToast) {
+    const ticketClient =
+      clients.find((client) => client.id_usuario === toast.ticket.id_usuario) ??
+      clients.find(
+        (client) =>
+          client.nombre.trim().toLocaleLowerCase("es") ===
+          toast.clientName.trim().toLocaleLowerCase("es")
+      );
+    if (!ticketClient) return;
+    setClientId(ticketClient.id_usuario);
+    setTab(
+      toast.ticket.estado === "Abierto"
+        ? "Abierto"
+        : toast.ticket.estado === "En Proceso"
+          ? "En Proceso"
+          : "Cerrado"
+    );
+    setTicketQuery("");
+    setToasts((current) =>
+      current.filter((item) => item.ticket.id_ticket !== toast.ticket.id_ticket)
+    );
+    startTransition(async () => {
+      await loadClientTickets(ticketClient.id_usuario);
+      window.setTimeout(() => {
+        document
+          .getElementById(`ticket-${toast.ticket.id_ticket}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    });
+  }
+
+  function openIndexedTicket(ticket: PortalTicket) {
+    openTicketFromToast({
+      ticket,
+      clientName:
+        ticket.cliente_nombre ?? clientsById.get(ticket.id_usuario)?.nombre ?? "Cliente sin nombre",
     });
   }
 
@@ -166,7 +388,7 @@ export function AdminTicketDashboard({
             <input
               value={clientQuery}
               onChange={(event) => setClientQuery(event.target.value)}
-              className="portal-input pl-10"
+              className="portal-input portal-input-icon"
               placeholder="Nombre, correo o empresa…"
             />
           </label>
@@ -196,6 +418,7 @@ export function AdminTicketDashboard({
                   )}
                 </span>
                 <span className="mt-1 block truncate text-[10px] text-[#64748B]">{client.email}</span>
+                <ClientTicketBadges counts={clientCounts.get(client.id_usuario) ?? emptyCounts()} />
               </button>
             ))
           ) : (
@@ -275,7 +498,65 @@ export function AdminTicketDashboard({
                 ))}
               </div>
 
-              {isPending && !tickets.length ? (
+              <label className="relative mt-4 block">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
+                <input
+                  value={ticketQuery}
+                  onChange={(event) => setTicketQuery(event.target.value)}
+                  className="portal-input portal-input-icon portal-input-with-clear"
+                  placeholder="Buscar por número, identificador, cliente o asunto…"
+                  aria-label="Buscar tickets"
+                />
+                {ticketQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTicketQuery("")}
+                    aria-label="Limpiar búsqueda de tickets"
+                    className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[#64748B] hover:bg-white/5 hover:text-white"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </label>
+
+              {debouncedTicketQuery ? (
+                <div className="mt-5 overflow-hidden rounded-xl border border-white/10 bg-[#0A1626]">
+                  <div className="border-b border-white/10 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">
+                      Resultados en todos los clientes ({ticketSearchResults.length})
+                    </p>
+                  </div>
+                  {ticketSearchResults.length ? (
+                    <div className="divide-y divide-white/5">
+                      {ticketSearchResults.map((ticket) => {
+                        const client = clientsById.get(ticket.id_usuario);
+                        return (
+                          <button
+                            key={ticket.id_ticket}
+                            type="button"
+                            onClick={() => openIndexedTicket(ticket)}
+                            className="flex w-full flex-col gap-2 px-4 py-4 text-left transition-colors hover:bg-white/[0.035] sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <span className="min-w-0">
+                              <span className="font-mono text-[10px] font-semibold text-[#60A5FA]">#TK-{ticket.id_ticket}</span>
+                              <span className="mt-1 block truncate text-xs font-semibold text-white">{ticket.titulo}</span>
+                              <span className="mt-1 block truncate text-[10px] text-[#64748B]">
+                                {ticket.cliente_nombre ?? client?.nombre ?? "Cliente sin nombre"}
+                                {client?.codigo_empresa ? ` · ${client.codigo_empresa}` : ""}
+                              </span>
+                            </span>
+                            <span className="w-fit shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[9px] font-semibold uppercase text-[#94A3B8]">
+                              {ticket.estado}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="px-5 py-10 text-center text-sm text-[#94A3B8]">No se encontraron tickets con esta búsqueda.</p>
+                  )}
+                </div>
+              ) : isPending && !tickets.length ? (
                 <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/10 bg-[#0A1626]/50 p-12 text-sm text-[#94A3B8]">
                   <Loader2 className="size-4 animate-spin text-[#60A5FA]" /> Cargando tickets…
                 </div>
@@ -305,6 +586,38 @@ export function AdminTicketDashboard({
         </div>
       </main>
 
+      <div
+        className="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-[min(92vw,360px)] flex-col gap-3"
+        aria-live="polite"
+        aria-label="Notificaciones de tickets nuevos"
+      >
+        {toasts.map((toast) => (
+          <button
+            key={toast.ticket.id_ticket}
+            type="button"
+            onClick={() => openTicketFromToast(toast)}
+            className="pointer-events-auto rounded-xl border border-[#3B82F6]/35 bg-[#0A1626] p-4 text-left shadow-2xl shadow-black/50 transition-colors hover:border-[#60A5FA]"
+          >
+            <span className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#3B82F6]/15 text-[#60A5FA]">
+                <BellRing className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold text-white">
+                  Nuevo ticket #TK-{toast.ticket.id_ticket}
+                </span>
+                <span className="mt-1 block truncate text-[11px] text-[#94A3B8]">
+                  {toast.clientName} · {toast.ticket.titulo}
+                </span>
+                <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60A5FA]">
+                  Abrir ticket
+                </span>
+              </span>
+            </span>
+          </button>
+        ))}
+      </div>
+
       {modal && (
         <AdminActionModal
           modal={modal}
@@ -327,6 +640,22 @@ export function AdminTicketDashboard({
         />
       )}
     </section>
+  );
+}
+
+function ClientTicketBadges({ counts }: { counts: ClientCounts }) {
+  return (
+    <span className="mt-2 flex flex-wrap gap-1.5" aria-label="Conteo de tickets del cliente">
+      <span title="Tickets abiertos" className="rounded-full border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 text-[8px] font-semibold text-rose-300">
+        A {counts.open}
+      </span>
+      <span title="Tickets en proceso" className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2 py-0.5 text-[8px] font-semibold text-amber-300">
+        P {counts.progress}
+      </span>
+      <span title="Tickets cerrados" className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 text-[8px] font-semibold text-emerald-300">
+        C {counts.closed}
+      </span>
+    </span>
   );
 }
 

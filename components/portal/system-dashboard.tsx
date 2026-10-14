@@ -49,7 +49,7 @@ export function SystemDashboard({
   const technicians = users.filter((user) => user.id_rol === 2 && user.activo === 1);
 
   const visibleUsers = useMemo(
-    () => users.filter((user) => `${user.nombre} ${user.email}`.toLowerCase().includes(query.toLowerCase())),
+    () => users.filter((user) => `${user.nombre} ${user.email} ${user.codigo_empresa ?? ""}`.toLowerCase().includes(query.toLowerCase())),
     [query, users]
   );
   const visibleTickets = useMemo(
@@ -101,7 +101,7 @@ export function SystemDashboard({
         {tab !== "correos" && (
           <label className="relative mt-5 block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} className="portal-input pl-10" placeholder={tab === "usuarios" ? "Buscar usuario o correo…" : "Buscar ticket, cliente o técnico…"} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} className="portal-input portal-input-icon" placeholder={tab === "usuarios" ? "Buscar usuario, correo o identificador…" : "Buscar ticket, cliente o técnico…"} />
           </label>
         )}
 
@@ -125,6 +125,7 @@ export function SystemDashboard({
                       <span className="rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-2.5 py-1 text-[#60A5FA]">{roleName(user.id_rol)}</span>
                       <span className={`rounded-full border px-2.5 py-1 ${user.verificado ? "border-emerald-500/25 text-emerald-300" : "border-amber-500/25 text-amber-300"}`}>{user.verificado ? "Verificado" : "Pendiente"}</span>
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[#94A3B8]">{user.activo ? "Activo" : "Inactivo"}</span>
+                      {user.id_rol === 1 && user.codigo_empresa && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 font-mono text-violet-200">ID: {user.codigo_empresa}</span>}
                       {user.conteo_center_slug && <span className="rounded-full border border-cyan-400/25 bg-cyan-400/10 px-2.5 py-1 text-cyan-200">Conteo: {countCenters.find((center) => center.slug === user.conteo_center_slug)?.name ?? user.conteo_center_slug}</span>}
                     </div>
                   </div>
@@ -196,11 +197,12 @@ export function SystemDashboard({
 
 function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUser; countCenters: readonly PeopleCounterCenterOption[]; isPending: boolean; onAction: (formData: FormData) => void }) {
   return (
-    <form action={onAction} className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-7 xl:items-end">
+    <form action={onAction} className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-8 xl:items-end">
       <input type="hidden" name="id_usuario" value={user?.id_usuario ?? ""} />
       <SystemField label="Nombre"><input name="nombre" defaultValue={user?.nombre} required className="portal-input" /></SystemField>
       <SystemField label="Correo"><input name="email" type="email" defaultValue={user?.email} required className="portal-input" /></SystemField>
       <SystemField label="Rol"><select name="id_rol" defaultValue={user?.id_rol ?? 1} className="portal-input"><option value="1">Cliente</option><option value="2">Técnico</option><option value="3">Administrador</option><option value="4">Administrador de conteo</option></select></SystemField>
+      <SystemField label="Identificador (clientes)"><input name="codigo_empresa" defaultValue={user?.codigo_empresa ?? ""} className="portal-input uppercase" maxLength={64} pattern="[A-Za-z0-9_-]{2,64}" placeholder="Ej. GRUPO-NORTE" /></SystemField>
       <SystemField label="Centro de conteo"><select name="conteo_center_slug" defaultValue={user?.conteo_center_slug ?? ""} className="portal-input"><option value="">Sin acceso</option>{countCenters.map((center) => <option key={center.slug} value={center.slug}>{center.name}</option>)}</select></SystemField>
       <SystemField label="Aprobación"><select name="verificado" defaultValue={user?.verificado ?? 1} className="portal-input"><option value="1">Verificado</option><option value="0">Pendiente</option></select></SystemField>
       <SystemField label={user ? "Nueva contraseña" : "Contraseña"}><input name="password" type="password" minLength={8} required={!user} className="portal-input" placeholder={user ? "Opcional" : "Mínimo 8 caracteres"} /></SystemField>

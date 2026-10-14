@@ -5,7 +5,7 @@ import { SystemDashboard } from "@/components/portal/system-dashboard";
 import { getPeopleCounterCenterOptions } from "@/lib/people-counter/api";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 import { PortalApiSessionError } from "@/lib/portal/api";
-import { getSystemData } from "@/lib/portal/data";
+import { getAdminDirectory, getSystemData } from "@/lib/portal/data";
 import { PORTAL_ROLES } from "@/lib/portal/types";
 
 export const metadata: Metadata = { title: "Administración del sistema — Portal Nordictech" };
@@ -16,18 +16,24 @@ export default async function PortalSystemPage() {
   if (!session) redirect("/portal/iniciar-sesion");
   if (session.role !== PORTAL_ROLES.ADMIN) redirect(getPortalHome(session.role));
   let data;
+  let directory;
   try {
-    data = await getSystemData();
+    [data, directory] = await Promise.all([getSystemData(), getAdminDirectory()]);
   } catch (error) {
     if (error instanceof PortalApiSessionError) redirect("/portal/cerrar-sesion");
     throw error;
   }
   const countCenters = await getPeopleCounterCenterOptions();
+  const clientsById = new Map(directory.clients.map((client) => [client.id_usuario, client]));
+  const users = data.users.map((user) => ({
+    ...user,
+    codigo_empresa: clientsById.get(user.id_usuario)?.codigo_empresa ?? user.codigo_empresa,
+  }));
 
   return (
     <PortalShell session={session}>
       <SystemDashboard
-        users={data.users}
+        users={users}
         tickets={data.tickets}
         emails={data.emails}
         metrics={data.metrics}

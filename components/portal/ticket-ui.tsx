@@ -99,7 +99,10 @@ export function TicketManagementCard({
   const isClosed = ticket.estado === "Cerrado" || ticket.estado === "Resuelto";
 
   return (
-    <article className="relative rounded-xl border border-white/10 bg-[#0A1626] shadow-[0_16px_45px_rgba(2,8,23,0.16)] transition-colors hover:border-white/20">
+    <article
+      id={`ticket-${ticket.id_ticket}`}
+      className="relative scroll-mt-28 rounded-xl border border-white/10 bg-[#0A1626] shadow-[0_16px_45px_rgba(2,8,23,0.16)] transition-colors hover:border-white/20"
+    >
       <div className="flex items-start gap-3 p-4 sm:items-center sm:p-5">
         <button
           type="button"

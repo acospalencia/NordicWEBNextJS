@@ -111,7 +111,7 @@ export function TechnicianDashboard({
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="portal-input pl-10"
+              className="portal-input portal-input-icon"
               placeholder="Nombre o correo…"
             />
           </label>

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { portalSessionMaxAgeSeconds, type PortalRole } from "@/lib/portal/types";
 
 const BRIDGE_COOKIE = "nordictech_portal_upstream_session";
 const BRIDGE_MAX_AGE_SECONDS = 60 * 60;
@@ -44,6 +45,19 @@ function readCookieValue(setCookie: string, name: string) {
 export async function clearPortalApiSession() {
   const cookieStore = await cookies();
   cookieStore.delete(BRIDGE_COOKIE);
+}
+
+export async function renewPortalApiSessionCookie(role: PortalRole) {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(BRIDGE_COOKIE)?.value;
+  if (!sessionId) return;
+  cookieStore.set(BRIDGE_COOKIE, sessionId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: portalSessionMaxAgeSeconds(role),
+  });
 }
 
 async function savePortalApiSession(setCookieHeader: string) {

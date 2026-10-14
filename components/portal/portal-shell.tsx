@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BarChart3, LogOut, Settings, TicketCheck } from "lucide-react";
+import { BarChart3, FileBarChart, LogOut, Settings, TicketCheck } from "lucide-react";
 import { logoutPortal } from "@/app/portal/actions";
 import { Footer } from "@/components/footer";
 import { PORTAL_ROLES, type PortalSession } from "@/lib/portal/types";
@@ -62,6 +62,13 @@ export function PortalShell({
                 >
                   <TicketCheck className="size-4" />
                   <span className="hidden md:inline">Tickets de Soporte</span>
+                </Link>
+                <Link
+                  href="/portal/administracion/reportes"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"
+                >
+                  <FileBarChart className="size-4" />
+                  <span className="hidden md:inline">Reportes</span>
                 </Link>
                 <Link
                   href="/portal/administracion/sistema"

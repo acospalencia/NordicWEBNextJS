@@ -41,6 +41,14 @@ h6 {
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
+.portal-input-icon {
+  padding-left: 2.5rem;
+}
+
+.portal-input-with-clear {
+  padding-right: 2.75rem;
+}
+
 .portal-input::placeholder {
   color: #64748b;
 }

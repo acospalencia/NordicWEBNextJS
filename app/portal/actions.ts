@@ -12,6 +12,7 @@ import {
   clearPortalApiSession,
   PortalApiError,
   portalApiRequest,
+  renewPortalApiSessionCookie,
   type PortalApiEnvelope,
 } from "@/lib/portal/api";
 import { getAdminClientTickets } from "@/lib/portal/data";
@@ -98,6 +99,7 @@ export async function loginPortal(
       role,
       countCenterSlug,
     });
+    await renewPortalApiSessionCookie(role);
     redirect(
       role === PORTAL_ROLES.COUNT_ADMIN
         ? "/conteo"
@@ -419,8 +421,12 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
   const email = value(formData, "email").toLowerCase();
   const role = Number(value(formData, "id_rol"));
   const password = String(formData.get("password") ?? "");
+  const identifier = value(formData, "codigo_empresa").toUpperCase();
   if (!name || !EMAIL_RE.test(email) || ![1, 2, 3, 4].includes(role)) {
     return failure("Completá correctamente los datos del usuario.");
+  }
+  if (identifier && !/^[A-Z0-9_-]{2,64}$/.test(identifier)) {
+    return failure("El identificador solo puede incluir letras, números, guiones y guion bajo.");
   }
   return runSystemAction(
     {
@@ -429,6 +435,7 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
       nombre: name,
       email,
       id_rol: role,
+      codigo_empresa: role === PORTAL_ROLES.CLIENT ? identifier : "",
       conteo_center_slug: value(formData, "conteo_center_slug"),
       verificado: value(formData, "verificado") === "1" ? 1 : 0,
       password,
