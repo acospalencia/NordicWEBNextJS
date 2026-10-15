@@ -30,6 +30,7 @@ export default async function AdminTicketPortalPage() {
   return (
     <PortalShell session={session}>
       <AdminTicketDashboard
+        adminId={session.userId}
         clients={data.clients}
         technicians={data.technicians}
         initialTickets={initialTickets}

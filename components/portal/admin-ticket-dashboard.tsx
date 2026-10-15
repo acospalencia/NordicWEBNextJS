@@ -46,6 +46,8 @@ type TicketToast = {
 
 type ClientCounts = { open: number; progress: number; closed: number };
 
+const ALERT_QUEUE_STORAGE_KEY = "nordictech-admin-ticket-alert-queue";
+
 function emptyCounts(): ClientCounts {
   return { open: 0, progress: 0, closed: 0 };
 }
@@ -93,26 +95,50 @@ async function playTicketTone(
   if (context.state !== "running") return;
   const profile =
     priority === "Crítica"
-      ? { frequencies: [880, 1174, 1568], volume: 0.14, spacing: 0.11 }
+      ? {
+          frequencies: [1046, 784, 1174, 880, 1397],
+          volume: 0.26,
+          spacing: 0.11,
+          duration: 0.2,
+          wave: "square" as OscillatorType,
+        }
       : priority === "Alta"
-        ? { frequencies: [784, 1046], volume: 0.12, spacing: 0.13 }
+        ? {
+            frequencies: [784, 1046, 1318],
+            volume: 0.17,
+            spacing: 0.13,
+            duration: 0.2,
+            wave: "sawtooth" as OscillatorType,
+          }
         : priority === "Baja"
-          ? { frequencies: [659], volume: 0.08, spacing: 0.1 }
-          : { frequencies: [880], volume: 0.11, spacing: 0.1 };
+          ? {
+              frequencies: [523],
+              volume: 0.08,
+              spacing: 0.1,
+              duration: 0.24,
+              wave: "sine" as OscillatorType,
+            }
+          : {
+              frequencies: [659, 880],
+              volume: 0.12,
+              spacing: 0.15,
+              duration: 0.22,
+              wave: "triangle" as OscillatorType,
+            };
   const start = context.currentTime + 0.01;
   profile.frequencies.forEach((frequency, index) => {
     const noteStart = start + index * profile.spacing;
     const oscillator = context.createOscillator();
     const gain = context.createGain();
-    oscillator.type = priority === "Crítica" ? "triangle" : "sine";
+    oscillator.type = profile.wave;
     oscillator.frequency.setValueAtTime(frequency, noteStart);
     gain.gain.setValueAtTime(0.0001, noteStart);
     gain.gain.exponentialRampToValueAtTime(profile.volume, noteStart + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + profile.duration);
     oscillator.connect(gain);
     gain.connect(context.destination);
     oscillator.start(noteStart);
-    oscillator.stop(noteStart + 0.2);
+    oscillator.stop(noteStart + profile.duration + 0.02);
   });
 }
 
@@ -126,11 +152,13 @@ function useDebouncedValue(value: string, delay = 250) {
 }
 
 export function AdminTicketDashboard({
+  adminId,
   clients,
   technicians,
   initialTickets,
   initialTicketIndex,
 }: {
+  adminId: number;
   clients: PortalUser[];
   technicians: PortalUser[];
   initialTickets: PortalTicket[];
@@ -155,7 +183,9 @@ export function AdminTicketDashboard({
   );
   const audioContext = useRef<AudioContext | null>(null);
   const soundReady = useRef(false);
-  const toastTimers = useRef<number[]>([]);
+  const soundTimers = useRef<number[]>([]);
+  const alertQueueHydrated = useRef(false);
+  const alertQueueStorageKey = `${ALERT_QUEUE_STORAGE_KEY}:${adminId}`;
 
   const activeClient = clients.find((client) => client.id_usuario === clientId);
   const clientsById = useMemo(
@@ -258,24 +288,23 @@ export function AdminTicketDashboard({
           ticket,
           clientName: ticket.cliente_nombre ?? "Cliente sin nombre",
         }));
-        setToasts((current) => [...current, ...nextToasts].slice(-4));
+        setToasts((current) => {
+          const queuedIds = new Set(current.map((toast) => toast.ticket.id_ticket));
+          return [
+            ...current,
+            ...nextToasts.filter((toast) => !queuedIds.has(toast.ticket.id_ticket)),
+          ];
+        });
         freshTickets.forEach((ticket, index) => {
           const context = audioContext.current;
           if (soundReady.current && context) {
-            toastTimers.current.push(
+            soundTimers.current.push(
               window.setTimeout(
                 () => void playTicketTone(context, ticket.prioridad),
-                index * 300
+                index * 750
               )
             );
           }
-          toastTimers.current.push(
-            window.setTimeout(() => {
-              setToasts((current) =>
-                current.filter((toast) => toast.ticket.id_ticket !== ticket.id_ticket)
-              );
-            }, 8000 + index * 300)
-          );
         });
         if (freshTickets.some((ticket) => ticket.id_usuario === clientId)) {
           await loadClientTickets(clientId);
@@ -315,6 +344,49 @@ export function AdminTicketDashboard({
   }, []);
 
   useEffect(() => {
+    const restoreQueue = window.setTimeout(() => {
+      try {
+        const stored = JSON.parse(
+          window.localStorage.getItem(alertQueueStorageKey) ?? "[]"
+        ) as unknown;
+        const queuedIds = Array.isArray(stored)
+          ? stored
+              .map((id) => Number(id))
+              .filter((id) => Number.isInteger(id) && id > 0)
+          : [];
+        const ticketsById = new Map(
+          initialTicketIndex.map((ticket) => [ticket.id_ticket, ticket])
+        );
+        const restored = queuedIds.flatMap<TicketToast>((ticketId) => {
+          const ticket = ticketsById.get(ticketId);
+          if (!ticket || ticket.activo !== 1) return [];
+          const client = clients.find(
+            (item) => item.id_usuario === ticket.id_usuario
+          );
+          return [{
+            ticket,
+            clientName: ticket.cliente_nombre ?? client?.nombre ?? "Cliente sin nombre",
+          }];
+        });
+        setToasts(restored);
+      } catch {
+        window.localStorage.removeItem(alertQueueStorageKey);
+      } finally {
+        alertQueueHydrated.current = true;
+      }
+    }, 0);
+    return () => window.clearTimeout(restoreQueue);
+  }, [alertQueueStorageKey, clients, initialTicketIndex]);
+
+  useEffect(() => {
+    if (!alertQueueHydrated.current) return;
+    window.localStorage.setItem(
+      alertQueueStorageKey,
+      JSON.stringify(toasts.map((toast) => toast.ticket.id_ticket))
+    );
+  }, [alertQueueStorageKey, toasts]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       void refreshTicketIndex(true);
     }, 20_000);
@@ -323,7 +395,7 @@ export function AdminTicketDashboard({
 
   useEffect(
     () => () => {
-      toastTimers.current.forEach((timer) => window.clearTimeout(timer));
+      soundTimers.current.forEach((timer) => window.clearTimeout(timer));
     },
     []
   );
@@ -380,39 +452,48 @@ export function AdminTicketDashboard({
     });
   }
 
-  function openTicketFromToast(toast: TicketToast) {
+  function navigateToTicket(toast: TicketToast) {
+    const currentTicket =
+      ticketIndex.find(
+        (ticket) => ticket.id_ticket === toast.ticket.id_ticket
+      ) ?? toast.ticket;
     const ticketClient =
-      clients.find((client) => client.id_usuario === toast.ticket.id_usuario) ??
+      clients.find((client) => client.id_usuario === currentTicket.id_usuario) ??
       clients.find(
         (client) =>
           client.nombre.trim().toLocaleLowerCase("es") ===
           toast.clientName.trim().toLocaleLowerCase("es")
       );
-    if (!ticketClient) return;
+    if (!ticketClient) return false;
     setClientId(ticketClient.id_usuario);
     setTab(
-      toast.ticket.estado === "Abierto"
+      currentTicket.estado === "Abierto"
         ? "Abierto"
-        : toast.ticket.estado === "En Proceso"
+        : currentTicket.estado === "En Proceso"
           ? "En Proceso"
           : "Cerrado"
     );
     setTicketQuery("");
-    setToasts((current) =>
-      current.filter((item) => item.ticket.id_ticket !== toast.ticket.id_ticket)
-    );
     startTransition(async () => {
       await loadClientTickets(ticketClient.id_usuario);
       window.setTimeout(() => {
         document
-          .getElementById(`ticket-${toast.ticket.id_ticket}`)
+          .getElementById(`ticket-${currentTicket.id_ticket}`)
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
+      }, 250);
     });
+    return true;
+  }
+
+  function openTicketFromToast(toast: TicketToast) {
+    if (!navigateToTicket(toast)) return;
+    setToasts((current) =>
+      current.filter((item) => item.ticket.id_ticket !== toast.ticket.id_ticket)
+    );
   }
 
   function openIndexedTicket(ticket: PortalTicket) {
-    openTicketFromToast({
+    navigateToTicket({
       ticket,
       clientName:
         ticket.cliente_nombre ?? clientsById.get(ticket.id_usuario)?.nombre ?? "Cliente sin nombre",
@@ -655,11 +736,20 @@ export function AdminTicketDashboard({
         </div>
       </main>
 
-      <div
-        className="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-[min(94vw,420px)] flex-col gap-3"
+      {!!toasts.length && <div
+        className="fixed bottom-5 right-5 z-[90] flex max-h-[calc(100dvh-2.5rem)] w-[min(94vw,420px)] flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
         aria-live="polite"
-        aria-label="Notificaciones de tickets nuevos"
+        aria-label={`${toasts.length} notificaciones de tickets pendientes`}
       >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#07111F]/95 px-4 py-3 shadow-xl backdrop-blur">
+          <span className="inline-flex items-center gap-2 text-xs font-semibold text-white">
+            <BellRing className="size-4 text-[#60A5FA]" />
+            Alertas pendientes
+          </span>
+          <span className="rounded-full bg-[#3B82F6]/15 px-2.5 py-1 font-mono text-[10px] font-semibold text-[#93C5FD]">
+            {toasts.length}
+          </span>
+        </div>
         {toasts.map((toast) => {
           const style = ticketAlertStyle(toast.ticket.prioridad);
           return (
@@ -668,7 +758,7 @@ export function AdminTicketDashboard({
               type="button"
               onClick={() => openTicketFromToast(toast)}
               aria-label={`Abrir ticket ${toast.ticket.id_ticket}, prioridad ${toast.ticket.prioridad}`}
-              className={`pointer-events-auto rounded-xl border p-5 text-left shadow-2xl shadow-black/50 transition-colors sm:p-6 ${style.container}`}
+              className={`rounded-xl border p-5 text-left shadow-2xl shadow-black/50 transition-colors sm:p-6 ${style.container}`}
             >
               <span className="flex items-start gap-4">
                 <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${style.icon}`}>
@@ -692,7 +782,7 @@ export function AdminTicketDashboard({
             </button>
           );
         })}
-      </div>
+      </div>}
 
       {modal && (
         <AdminActionModal
