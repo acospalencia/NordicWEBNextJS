@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BarChart3, FileBarChart, LogOut, Settings, TicketCheck } from "lucide-react";
 import { logoutPortal } from "@/app/portal/actions";
+import { AdminTicketAlerts } from "@/components/portal/admin-ticket-alerts";
 import { Footer } from "@/components/footer";
 import { PORTAL_ROLES, type PortalSession } from "@/lib/portal/types";
 
@@ -92,6 +93,9 @@ export function PortalShell({
         </div>
       </header>
       <main>{children}</main>
+      {session.role === PORTAL_ROLES.ADMIN && (
+        <AdminTicketAlerts adminId={session.userId} />
+      )}
       <Footer />
     </div>
   );

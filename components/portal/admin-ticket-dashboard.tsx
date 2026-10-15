@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
-  BellRing,
   CirclePlus,
   Loader2,
   Mail,
@@ -25,6 +24,10 @@ import {
   TicketManagementCard,
 } from "@/components/portal/ticket-ui";
 import {
+  ADMIN_TICKETS_REFRESH_EVENT,
+  ADMIN_TICKETS_UPDATED_EVENT,
+} from "@/lib/portal/events";
+import {
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   type PortalActionState,
@@ -39,121 +42,12 @@ type AdminModal =
   | { kind: "status"; ticket: PortalTicket; status: AdminStatus }
   | null;
 
-type TicketToast = {
-  ticket: PortalTicket;
-  clientName: string;
-};
-
 type ClientCounts = { open: number; progress: number; closed: number };
-
-const ALERT_QUEUE_STORAGE_KEY = "nordictech-admin-ticket-alert-queue";
-let sharedTicketAudioContext: AudioContext | null = null;
-
-function getTicketAudioContext() {
-  if (sharedTicketAudioContext?.state !== "closed") {
-    return sharedTicketAudioContext;
-  }
-  const AudioContextClass =
-    window.AudioContext ||
-    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioContextClass) return null;
-  sharedTicketAudioContext = new AudioContextClass();
-  return sharedTicketAudioContext;
-}
 
 function emptyCounts(): ClientCounts {
   return { open: 0, progress: 0, closed: 0 };
 }
 
-function ticketAlertStyle(priority: PortalTicket["prioridad"]) {
-  if (priority === "Crítica") {
-    return {
-      container: "border-rose-400/50 bg-[#211019] hover:border-rose-300/80",
-      icon: "bg-rose-400/15 text-rose-300",
-      badge: "border-rose-400/30 bg-rose-400/10 text-rose-200",
-      action: "text-rose-300",
-    };
-  }
-  if (priority === "Alta") {
-    return {
-      container: "border-amber-400/45 bg-[#1D190F] hover:border-amber-300/75",
-      icon: "bg-amber-400/15 text-amber-300",
-      badge: "border-amber-400/30 bg-amber-400/10 text-amber-200",
-      action: "text-amber-300",
-    };
-  }
-  if (priority === "Baja") {
-    return {
-      container: "border-emerald-400/40 bg-[#0B1C1B] hover:border-emerald-300/70",
-      icon: "bg-emerald-400/15 text-emerald-300",
-      badge: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
-      action: "text-emerald-300",
-    };
-  }
-  return {
-    container: "border-[#3B82F6]/40 bg-[#0A1626] hover:border-[#60A5FA]",
-    icon: "bg-[#3B82F6]/15 text-[#60A5FA]",
-    badge: "border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#93C5FD]",
-    action: "text-[#60A5FA]",
-  };
-}
-
-async function playTicketTone(
-  context: AudioContext,
-  priority: PortalTicket["prioridad"]
-) {
-  if (context.state === "suspended") {
-    await context.resume();
-  }
-  if (context.state !== "running") return;
-  const profile =
-    priority === "Crítica"
-      ? {
-          frequencies: [1046, 784, 1174, 880, 1397],
-          volume: 0.26,
-          spacing: 0.11,
-          duration: 0.2,
-          wave: "square" as OscillatorType,
-        }
-      : priority === "Alta"
-        ? {
-            frequencies: [784, 1046, 1318],
-            volume: 0.17,
-            spacing: 0.13,
-            duration: 0.2,
-            wave: "sawtooth" as OscillatorType,
-          }
-        : priority === "Baja"
-          ? {
-              frequencies: [523],
-              volume: 0.08,
-              spacing: 0.1,
-              duration: 0.24,
-              wave: "sine" as OscillatorType,
-            }
-          : {
-              frequencies: [659, 880],
-              volume: 0.12,
-              spacing: 0.15,
-              duration: 0.22,
-              wave: "triangle" as OscillatorType,
-            };
-  const start = context.currentTime + 0.01;
-  profile.frequencies.forEach((frequency, index) => {
-    const noteStart = start + index * profile.spacing;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = profile.wave;
-    oscillator.frequency.setValueAtTime(frequency, noteStart);
-    gain.gain.setValueAtTime(0.0001, noteStart);
-    gain.gain.exponentialRampToValueAtTime(profile.volume, noteStart + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + profile.duration);
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(noteStart);
-    oscillator.stop(noteStart + profile.duration + 0.02);
-  });
-}
 
 function useDebouncedValue(value: string, delay = 250) {
   const [debounced, setDebounced] = useState(value);
@@ -165,19 +59,17 @@ function useDebouncedValue(value: string, delay = 250) {
 }
 
 export function AdminTicketDashboard({
-  adminId,
   clients,
   technicians,
   initialTickets,
   initialTicketIndex,
 }: {
-  adminId: number;
   clients: PortalUser[];
   technicians: PortalUser[];
   initialTickets: PortalTicket[];
   initialTicketIndex: PortalTicket[];
 }) {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [clientId, setClientId] = useState(clients[0]?.id_usuario ?? 0);
   const [tickets, setTickets] = useState(initialTickets);
   const [ticketIndex, setTicketIndex] = useState(initialTicketIndex);
@@ -189,16 +81,8 @@ export function AdminTicketDashboard({
   const [modal, setModal] = useState<AdminModal>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [notice, setNotice] = useState<{ status: "success" | "error"; message: string } | null>(null);
-  const [toasts, setToasts] = useState<TicketToast[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const notifiedTicketIds = useRef(
-    new Set(initialTicketIndex.filter((ticket) => ticket.activo === 1).map((ticket) => ticket.id_ticket))
-  );
-  const soundReady = useRef(false);
-  const soundTimers = useRef<number[]>([]);
-  const alertQueueHydrated = useRef(false);
-  const alertQueueStorageKey = `${ALERT_QUEUE_STORAGE_KEY}:${adminId}`;
+  const handledAlertTarget = useRef<string | null>(null);
 
   const activeClient = clients.find((client) => client.id_usuario === clientId);
   const clientsById = useMemo(
@@ -267,165 +151,56 @@ export function AdminTicketDashboard({
     setNotice({ status: "error", message: result.message ?? "No fue posible cargar los tickets." });
   }, []);
 
-  const enableTicketSound = useCallback(async (playPreview = false) => {
-    const context = getTicketAudioContext();
-    if (!context) {
-      soundReady.current = false;
-      setSoundEnabled(false);
-      return;
-    }
-    try {
-      if (context.state === "suspended") await context.resume();
-      const enabled = context.state === "running";
-      soundReady.current = enabled;
-      setSoundEnabled(enabled);
-      if (enabled && playPreview) await playTicketTone(context, "Media");
-    } catch {
-      soundReady.current = false;
-      setSoundEnabled(false);
-    }
-  }, []);
-
-  const refreshTicketIndex = useCallback(
-    async (notify = true) => {
-      const response = await fetch("/api/portal/admin/tickets", { cache: "no-store" });
-      if (response.status === 401) {
-        router.replace("/portal/iniciar-sesion");
-        return;
-      }
-      if (!response.ok) return;
-      const payload: unknown = await response.json();
-      if (!payload || typeof payload !== "object" || !("tickets" in payload)) return;
-      const nextTickets = (payload as { tickets?: unknown }).tickets;
+  useEffect(() => {
+    const updateTickets = (event: Event) => {
+      const nextTickets = (
+        event as CustomEvent<{ tickets?: PortalTicket[] }>
+      ).detail?.tickets;
       if (!Array.isArray(nextTickets)) return;
-
-      const normalized = nextTickets.filter(
-        (ticket): ticket is PortalTicket =>
-          !!ticket &&
-          typeof ticket === "object" &&
-          Number.isInteger(Number((ticket as PortalTicket).id_ticket))
-      );
-      const freshTickets = notify
-        ? normalized.filter(
-            (ticket) =>
-              ticket.activo === 1 && !notifiedTicketIds.current.has(ticket.id_ticket)
-          )
-        : [];
-
-      normalized.forEach((ticket) => notifiedTicketIds.current.add(ticket.id_ticket));
-      setTicketIndex(normalized);
-
-      if (freshTickets.length) {
-        const nextToasts = freshTickets.map((ticket) => ({
-          ticket,
-          clientName: ticket.cliente_nombre ?? "Cliente sin nombre",
-        }));
-        setToasts((current) => {
-          const queuedIds = new Set(current.map((toast) => toast.ticket.id_ticket));
-          return [
-            ...current,
-            ...nextToasts.filter((toast) => !queuedIds.has(toast.ticket.id_ticket)),
-          ];
-        });
-        freshTickets.forEach((ticket, index) => {
-          const context = sharedTicketAudioContext;
-          if (soundReady.current && context) {
-            soundTimers.current.push(
-              window.setTimeout(
-                () => {
-                  void playTicketTone(context, ticket.prioridad).catch(() => {
-                    soundReady.current = false;
-                    setSoundEnabled(false);
-                  });
-                },
-                index * 750
-              )
-            );
-          }
-        });
-        if (freshTickets.some((ticket) => ticket.id_usuario === clientId)) {
-          await loadClientTickets(clientId);
-        }
-      }
-    },
-    [clientId, loadClientTickets, router]
-  );
-
-  useEffect(() => {
-    const enableSound = () => {
-      void enableTicketSound(false);
+      setTicketIndex(nextTickets);
+      if (clientId > 0) void loadClientTickets(clientId);
     };
-    const restoreEnabledState = window.setTimeout(() => {
-      if (sharedTicketAudioContext?.state === "running") {
-        soundReady.current = true;
-        setSoundEnabled(true);
-      }
-    }, 0);
-    window.addEventListener("pointerdown", enableSound, { once: true });
-    window.addEventListener("keydown", enableSound, { once: true });
+    window.addEventListener(ADMIN_TICKETS_UPDATED_EVENT, updateTickets);
     return () => {
-      window.clearTimeout(restoreEnabledState);
-      window.removeEventListener("pointerdown", enableSound);
-      window.removeEventListener("keydown", enableSound);
+      window.removeEventListener(ADMIN_TICKETS_UPDATED_EVENT, updateTickets);
     };
-  }, [enableTicketSound]);
+  }, [clientId, loadClientTickets]);
 
+  const alertTicketId = Number(searchParams.get("ticket"));
+  const alertClientId = Number(searchParams.get("client"));
   useEffect(() => {
-    const restoreQueue = window.setTimeout(() => {
-      try {
-        const stored = JSON.parse(
-          window.localStorage.getItem(alertQueueStorageKey) ?? "[]"
-        ) as unknown;
-        const queuedIds = Array.isArray(stored)
-          ? stored
-              .map((id) => Number(id))
-              .filter((id) => Number.isInteger(id) && id > 0)
-          : [];
-        const ticketsById = new Map(
-          initialTicketIndex.map((ticket) => [ticket.id_ticket, ticket])
-        );
-        const restored = queuedIds.flatMap<TicketToast>((ticketId) => {
-          const ticket = ticketsById.get(ticketId);
-          if (!ticket || ticket.activo !== 1) return [];
-          const client = clients.find(
-            (item) => item.id_usuario === ticket.id_usuario
-          );
-          return [{
-            ticket,
-            clientName: ticket.cliente_nombre ?? client?.nombre ?? "Cliente sin nombre",
-          }];
-        });
-        setToasts(restored);
-      } catch {
-        window.localStorage.removeItem(alertQueueStorageKey);
-      } finally {
-        alertQueueHydrated.current = true;
-      }
-    }, 0);
-    return () => window.clearTimeout(restoreQueue);
-  }, [alertQueueStorageKey, clients, initialTicketIndex]);
-
-  useEffect(() => {
-    if (!alertQueueHydrated.current) return;
-    window.localStorage.setItem(
-      alertQueueStorageKey,
-      JSON.stringify(toasts.map((toast) => toast.ticket.id_ticket))
+    if (!Number.isInteger(alertTicketId) || alertTicketId <= 0) return;
+    const targetKey = `${alertClientId || 0}:${alertTicketId}`;
+    if (handledAlertTarget.current === targetKey) return;
+    const ticket = ticketIndex.find((item) => item.id_ticket === alertTicketId);
+    const targetClientId = alertClientId > 0 ? alertClientId : ticket?.id_usuario;
+    const targetClient = clients.find(
+      (client) => client.id_usuario === targetClientId
     );
-  }, [alertQueueStorageKey, toasts]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      void refreshTicketIndex(true);
-    }, 20_000);
-    return () => window.clearInterval(timer);
-  }, [refreshTicketIndex]);
-
-  useEffect(
-    () => () => {
-      soundTimers.current.forEach((timer) => window.clearTimeout(timer));
-    },
-    []
-  );
+    if (!ticket || !targetClient) return;
+    const openTarget = window.setTimeout(() => {
+      if (handledAlertTarget.current === targetKey) return;
+      handledAlertTarget.current = targetKey;
+      setClientId(targetClient.id_usuario);
+      setTab(
+        ticket.estado === "Abierto"
+          ? "Abierto"
+          : ticket.estado === "En Proceso"
+            ? "En Proceso"
+            : "Cerrado"
+      );
+      setTicketQuery("");
+      startTransition(async () => {
+        await loadClientTickets(targetClient.id_usuario);
+        window.setTimeout(() => {
+          document
+            .getElementById(`ticket-${ticket.id_ticket}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 250);
+      });
+    }, 0);
+    return () => window.clearTimeout(openTarget);
+  }, [alertClientId, alertTicketId, clients, loadClientTickets, ticketIndex]);
 
   function selectClient(nextClientId: number) {
     if (nextClientId === clientId) {
@@ -455,7 +230,7 @@ export function AdminTicketDashboard({
       });
       if (result.status === "success" && clientId > 0) {
         await loadClientTickets(clientId);
-        await refreshTicketIndex(false);
+        window.dispatchEvent(new Event(ADMIN_TICKETS_REFRESH_EVENT));
         setModal(null);
       }
     });
@@ -473,25 +248,23 @@ export function AdminTicketDashboard({
         setClientId(targetClientId);
         setTab("Abierto");
         await loadClientTickets(targetClientId);
-        await refreshTicketIndex(false);
+        window.dispatchEvent(new Event(ADMIN_TICKETS_REFRESH_EVENT));
         setCreateOpen(false);
       }
     });
   }
 
-  function navigateToTicket(toast: TicketToast) {
+  function openIndexedTicket(ticket: PortalTicket) {
     const currentTicket =
-      ticketIndex.find(
-        (ticket) => ticket.id_ticket === toast.ticket.id_ticket
-      ) ?? toast.ticket;
+      ticketIndex.find((item) => item.id_ticket === ticket.id_ticket) ?? ticket;
     const ticketClient =
       clients.find((client) => client.id_usuario === currentTicket.id_usuario) ??
       clients.find(
         (client) =>
           client.nombre.trim().toLocaleLowerCase("es") ===
-          toast.clientName.trim().toLocaleLowerCase("es")
+          (currentTicket.cliente_nombre ?? "").trim().toLocaleLowerCase("es")
       );
-    if (!ticketClient) return false;
+    if (!ticketClient) return;
     setClientId(ticketClient.id_usuario);
     setTab(
       currentTicket.estado === "Abierto"
@@ -508,22 +281,6 @@ export function AdminTicketDashboard({
           .getElementById(`ticket-${currentTicket.id_ticket}`)
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 250);
-    });
-    return true;
-  }
-
-  function openTicketFromToast(toast: TicketToast) {
-    if (!navigateToTicket(toast)) return;
-    setToasts((current) =>
-      current.filter((item) => item.ticket.id_ticket !== toast.ticket.id_ticket)
-    );
-  }
-
-  function openIndexedTicket(ticket: PortalTicket) {
-    navigateToTicket({
-      ticket,
-      clientName:
-        ticket.cliente_nombre ?? clientsById.get(ticket.id_usuario)?.nombre ?? "Cliente sin nombre",
     });
   }
 
@@ -633,19 +390,6 @@ export function AdminTicketDashboard({
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <button
-                type="button"
-                onClick={() => void enableTicketSound(true)}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs font-semibold transition-colors ${
-                  soundEnabled
-                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
-                    : "border-amber-400/35 bg-amber-400/10 text-amber-200 hover:bg-amber-400/15"
-                }`}
-                aria-pressed={soundEnabled}
-              >
-                <BellRing className="size-4" />
-                {soundEnabled ? "Probar sonido" : "Activar sonido"}
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -775,54 +519,6 @@ export function AdminTicketDashboard({
           )}
         </div>
       </main>
-
-      {!!toasts.length && <div
-        className="fixed bottom-5 right-5 z-[90] flex max-h-[calc(100dvh-2.5rem)] w-[min(94vw,420px)] flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
-        aria-live="polite"
-        aria-label={`${toasts.length} notificaciones de tickets pendientes`}
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#07111F]/95 px-4 py-3 shadow-xl backdrop-blur">
-          <span className="inline-flex items-center gap-2 text-xs font-semibold text-white">
-            <BellRing className="size-4 text-[#60A5FA]" />
-            Alertas pendientes
-          </span>
-          <span className="rounded-full bg-[#3B82F6]/15 px-2.5 py-1 font-mono text-[10px] font-semibold text-[#93C5FD]">
-            {toasts.length}
-          </span>
-        </div>
-        {toasts.map((toast) => {
-          const style = ticketAlertStyle(toast.ticket.prioridad);
-          return (
-            <button
-              key={toast.ticket.id_ticket}
-              type="button"
-              onClick={() => openTicketFromToast(toast)}
-              aria-label={`Abrir ticket ${toast.ticket.id_ticket}, prioridad ${toast.ticket.prioridad}`}
-              className={`rounded-xl border p-5 text-left shadow-2xl shadow-black/50 transition-colors sm:p-6 ${style.container}`}
-            >
-              <span className="flex items-start gap-4">
-                <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${style.icon}`}>
-                  <BellRing className="size-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.11em] ${style.badge}`}>
-                    Prioridad {toast.ticket.prioridad}
-                  </span>
-                  <span className="mt-2 block text-sm font-semibold text-white">
-                    Nuevo ticket #TK-{toast.ticket.id_ticket}
-                  </span>
-                  <span className="mt-1.5 block truncate text-xs text-[#94A3B8]">
-                    {toast.clientName} · {toast.ticket.titulo}
-                  </span>
-                  <span className={`mt-3 block text-[11px] font-semibold uppercase tracking-[0.1em] ${style.action}`}>
-                    Abrir ticket
-                  </span>
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>}
 
       {modal && (
         <AdminActionModal

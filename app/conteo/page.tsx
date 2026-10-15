@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PeopleCounterDashboard } from "@/components/people-counter/dashboard";
+import { AdminTicketAlerts } from "@/components/portal/admin-ticket-alerts";
 import { getPeopleCounterCenterName } from "@/lib/people-counter/centers";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 import { PORTAL_ROLES } from "@/lib/portal/types";
@@ -24,19 +25,24 @@ export default async function ConteoPage() {
   }
 
   return (
-    <PeopleCounterDashboard
-      initialCenterSlug={session.countCenterSlug ?? ""}
-      initialCenterName={
-        session.countCenterSlug
-          ? getPeopleCounterCenterName(session.countCenterSlug)
-          : "Selecciona un centro"
-      }
-      canSelectCenter={canSelectCenter}
-      ticketsHref={
-        session.role === PORTAL_ROLES.COUNT_ADMIN
-          ? null
-          : getPortalHome(session.role)
-      }
-    />
+    <>
+      <PeopleCounterDashboard
+        initialCenterSlug={session.countCenterSlug ?? ""}
+        initialCenterName={
+          session.countCenterSlug
+            ? getPeopleCounterCenterName(session.countCenterSlug)
+            : "Selecciona un centro"
+        }
+        canSelectCenter={canSelectCenter}
+        ticketsHref={
+          session.role === PORTAL_ROLES.COUNT_ADMIN
+            ? null
+            : getPortalHome(session.role)
+        }
+      />
+      {session.role === PORTAL_ROLES.ADMIN && (
+        <AdminTicketAlerts adminId={session.userId} />
+      )}
+    </>
   );
 }
