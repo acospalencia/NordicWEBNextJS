@@ -47,6 +47,19 @@ type TicketToast = {
 type ClientCounts = { open: number; progress: number; closed: number };
 
 const ALERT_QUEUE_STORAGE_KEY = "nordictech-admin-ticket-alert-queue";
+let sharedTicketAudioContext: AudioContext | null = null;
+
+function getTicketAudioContext() {
+  if (sharedTicketAudioContext?.state !== "closed") {
+    return sharedTicketAudioContext;
+  }
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return null;
+  sharedTicketAudioContext = new AudioContextClass();
+  return sharedTicketAudioContext;
+}
 
 function emptyCounts(): ClientCounts {
   return { open: 0, progress: 0, closed: 0 };
@@ -177,11 +190,11 @@ export function AdminTicketDashboard({
   const [createOpen, setCreateOpen] = useState(false);
   const [notice, setNotice] = useState<{ status: "success" | "error"; message: string } | null>(null);
   const [toasts, setToasts] = useState<TicketToast[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isPending, startTransition] = useTransition();
   const notifiedTicketIds = useRef(
     new Set(initialTicketIndex.filter((ticket) => ticket.activo === 1).map((ticket) => ticket.id_ticket))
   );
-  const audioContext = useRef<AudioContext | null>(null);
   const soundReady = useRef(false);
   const soundTimers = useRef<number[]>([]);
   const alertQueueHydrated = useRef(false);
@@ -254,6 +267,25 @@ export function AdminTicketDashboard({
     setNotice({ status: "error", message: result.message ?? "No fue posible cargar los tickets." });
   }, []);
 
+  const enableTicketSound = useCallback(async (playPreview = false) => {
+    const context = getTicketAudioContext();
+    if (!context) {
+      soundReady.current = false;
+      setSoundEnabled(false);
+      return;
+    }
+    try {
+      if (context.state === "suspended") await context.resume();
+      const enabled = context.state === "running";
+      soundReady.current = enabled;
+      setSoundEnabled(enabled);
+      if (enabled && playPreview) await playTicketTone(context, "Media");
+    } catch {
+      soundReady.current = false;
+      setSoundEnabled(false);
+    }
+  }, []);
+
   const refreshTicketIndex = useCallback(
     async (notify = true) => {
       const response = await fetch("/api/portal/admin/tickets", { cache: "no-store" });
@@ -296,11 +328,16 @@ export function AdminTicketDashboard({
           ];
         });
         freshTickets.forEach((ticket, index) => {
-          const context = audioContext.current;
+          const context = sharedTicketAudioContext;
           if (soundReady.current && context) {
             soundTimers.current.push(
               window.setTimeout(
-                () => void playTicketTone(context, ticket.prioridad),
+                () => {
+                  void playTicketTone(context, ticket.prioridad).catch(() => {
+                    soundReady.current = false;
+                    setSoundEnabled(false);
+                  });
+                },
                 index * 750
               )
             );
@@ -316,32 +353,22 @@ export function AdminTicketDashboard({
 
   useEffect(() => {
     const enableSound = () => {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const context = audioContext.current ?? new AudioContextClass();
-      audioContext.current = context;
-      void context
-        .resume()
-        .then(() => {
-          soundReady.current = context.state === "running";
-        })
-        .catch(() => {
-          soundReady.current = false;
-        });
+      void enableTicketSound(false);
     };
+    const restoreEnabledState = window.setTimeout(() => {
+      if (sharedTicketAudioContext?.state === "running") {
+        soundReady.current = true;
+        setSoundEnabled(true);
+      }
+    }, 0);
     window.addEventListener("pointerdown", enableSound, { once: true });
     window.addEventListener("keydown", enableSound, { once: true });
     return () => {
+      window.clearTimeout(restoreEnabledState);
       window.removeEventListener("pointerdown", enableSound);
       window.removeEventListener("keydown", enableSound);
-      const context = audioContext.current;
-      audioContext.current = null;
-      soundReady.current = false;
-      if (context && context.state !== "closed") void context.close();
     };
-  }, []);
+  }, [enableTicketSound]);
 
   useEffect(() => {
     const restoreQueue = window.setTimeout(() => {
@@ -606,6 +633,19 @@ export function AdminTicketDashboard({
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => void enableTicketSound(true)}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-xs font-semibold transition-colors ${
+                  soundEnabled
+                    ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
+                    : "border-amber-400/35 bg-amber-400/10 text-amber-200 hover:bg-amber-400/15"
+                }`}
+                aria-pressed={soundEnabled}
+              >
+                <BellRing className="size-4" />
+                {soundEnabled ? "Probar sonido" : "Activar sonido"}
+              </button>
               <button
                 type="button"
                 onClick={() => {
