@@ -50,23 +50,70 @@ function emptyCounts(): ClientCounts {
   return { open: 0, progress: 0, closed: 0 };
 }
 
-function playTicketTone() {
-  const AudioContextClass = window.AudioContext;
-  if (!AudioContextClass) return;
-  const context = new AudioContextClass();
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  oscillator.type = "sine";
-  oscillator.frequency.setValueAtTime(880, context.currentTime);
-  oscillator.frequency.exponentialRampToValueAtTime(1174, context.currentTime + 0.12);
-  gain.gain.setValueAtTime(0.0001, context.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.25);
-  oscillator.connect(gain);
-  gain.connect(context.destination);
-  oscillator.start();
-  oscillator.stop(context.currentTime + 0.26);
-  oscillator.addEventListener("ended", () => void context.close(), { once: true });
+function ticketAlertStyle(priority: PortalTicket["prioridad"]) {
+  if (priority === "Crítica") {
+    return {
+      container: "border-rose-400/50 bg-[#211019] hover:border-rose-300/80",
+      icon: "bg-rose-400/15 text-rose-300",
+      badge: "border-rose-400/30 bg-rose-400/10 text-rose-200",
+      action: "text-rose-300",
+    };
+  }
+  if (priority === "Alta") {
+    return {
+      container: "border-amber-400/45 bg-[#1D190F] hover:border-amber-300/75",
+      icon: "bg-amber-400/15 text-amber-300",
+      badge: "border-amber-400/30 bg-amber-400/10 text-amber-200",
+      action: "text-amber-300",
+    };
+  }
+  if (priority === "Baja") {
+    return {
+      container: "border-emerald-400/40 bg-[#0B1C1B] hover:border-emerald-300/70",
+      icon: "bg-emerald-400/15 text-emerald-300",
+      badge: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
+      action: "text-emerald-300",
+    };
+  }
+  return {
+    container: "border-[#3B82F6]/40 bg-[#0A1626] hover:border-[#60A5FA]",
+    icon: "bg-[#3B82F6]/15 text-[#60A5FA]",
+    badge: "border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#93C5FD]",
+    action: "text-[#60A5FA]",
+  };
+}
+
+async function playTicketTone(
+  context: AudioContext,
+  priority: PortalTicket["prioridad"]
+) {
+  if (context.state === "suspended") {
+    await context.resume();
+  }
+  if (context.state !== "running") return;
+  const profile =
+    priority === "Crítica"
+      ? { frequencies: [880, 1174, 1568], volume: 0.14, spacing: 0.11 }
+      : priority === "Alta"
+        ? { frequencies: [784, 1046], volume: 0.12, spacing: 0.13 }
+        : priority === "Baja"
+          ? { frequencies: [659], volume: 0.08, spacing: 0.1 }
+          : { frequencies: [880], volume: 0.11, spacing: 0.1 };
+  const start = context.currentTime + 0.01;
+  profile.frequencies.forEach((frequency, index) => {
+    const noteStart = start + index * profile.spacing;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = priority === "Crítica" ? "triangle" : "sine";
+    oscillator.frequency.setValueAtTime(frequency, noteStart);
+    gain.gain.setValueAtTime(0.0001, noteStart);
+    gain.gain.exponentialRampToValueAtTime(profile.volume, noteStart + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.18);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.2);
+  });
 }
 
 function useDebouncedValue(value: string, delay = 250) {
@@ -106,6 +153,7 @@ export function AdminTicketDashboard({
   const notifiedTicketIds = useRef(
     new Set(initialTicketIndex.filter((ticket) => ticket.activo === 1).map((ticket) => ticket.id_ticket))
   );
+  const audioContext = useRef<AudioContext | null>(null);
   const soundReady = useRef(false);
   const toastTimers = useRef<number[]>([]);
 
@@ -212,9 +260,13 @@ export function AdminTicketDashboard({
         }));
         setToasts((current) => [...current, ...nextToasts].slice(-4));
         freshTickets.forEach((ticket, index) => {
-          if (soundReady.current) {
+          const context = audioContext.current;
+          if (soundReady.current && context) {
             toastTimers.current.push(
-              window.setTimeout(() => playTicketTone(), index * 300)
+              window.setTimeout(
+                () => void playTicketTone(context, ticket.prioridad),
+                index * 300
+              )
             );
           }
           toastTimers.current.push(
@@ -235,13 +287,30 @@ export function AdminTicketDashboard({
 
   useEffect(() => {
     const enableSound = () => {
-      soundReady.current = true;
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const context = audioContext.current ?? new AudioContextClass();
+      audioContext.current = context;
+      void context
+        .resume()
+        .then(() => {
+          soundReady.current = context.state === "running";
+        })
+        .catch(() => {
+          soundReady.current = false;
+        });
     };
     window.addEventListener("pointerdown", enableSound, { once: true });
     window.addEventListener("keydown", enableSound, { once: true });
     return () => {
       window.removeEventListener("pointerdown", enableSound);
       window.removeEventListener("keydown", enableSound);
+      const context = audioContext.current;
+      audioContext.current = null;
+      soundReady.current = false;
+      if (context && context.state !== "closed") void context.close();
     };
   }, []);
 
@@ -587,35 +656,42 @@ export function AdminTicketDashboard({
       </main>
 
       <div
-        className="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-[min(92vw,360px)] flex-col gap-3"
+        className="pointer-events-none fixed bottom-5 right-5 z-[90] flex w-[min(94vw,420px)] flex-col gap-3"
         aria-live="polite"
         aria-label="Notificaciones de tickets nuevos"
       >
-        {toasts.map((toast) => (
-          <button
-            key={toast.ticket.id_ticket}
-            type="button"
-            onClick={() => openTicketFromToast(toast)}
-            className="pointer-events-auto rounded-xl border border-[#3B82F6]/35 bg-[#0A1626] p-4 text-left shadow-2xl shadow-black/50 transition-colors hover:border-[#60A5FA]"
-          >
-            <span className="flex items-start gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#3B82F6]/15 text-[#60A5FA]">
-                <BellRing className="size-4" />
+        {toasts.map((toast) => {
+          const style = ticketAlertStyle(toast.ticket.prioridad);
+          return (
+            <button
+              key={toast.ticket.id_ticket}
+              type="button"
+              onClick={() => openTicketFromToast(toast)}
+              aria-label={`Abrir ticket ${toast.ticket.id_ticket}, prioridad ${toast.ticket.prioridad}`}
+              className={`pointer-events-auto rounded-xl border p-5 text-left shadow-2xl shadow-black/50 transition-colors sm:p-6 ${style.container}`}
+            >
+              <span className="flex items-start gap-4">
+                <span className={`flex size-11 shrink-0 items-center justify-center rounded-xl ${style.icon}`}>
+                  <BellRing className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.11em] ${style.badge}`}>
+                    Prioridad {toast.ticket.prioridad}
+                  </span>
+                  <span className="mt-2 block text-sm font-semibold text-white">
+                    Nuevo ticket #TK-{toast.ticket.id_ticket}
+                  </span>
+                  <span className="mt-1.5 block truncate text-xs text-[#94A3B8]">
+                    {toast.clientName} · {toast.ticket.titulo}
+                  </span>
+                  <span className={`mt-3 block text-[11px] font-semibold uppercase tracking-[0.1em] ${style.action}`}>
+                    Abrir ticket
+                  </span>
+                </span>
               </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-semibold text-white">
-                  Nuevo ticket #TK-{toast.ticket.id_ticket}
-                </span>
-                <span className="mt-1 block truncate text-[11px] text-[#94A3B8]">
-                  {toast.clientName} · {toast.ticket.titulo}
-                </span>
-                <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.1em] text-[#60A5FA]">
-                  Abrir ticket
-                </span>
-              </span>
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
       {modal && (
