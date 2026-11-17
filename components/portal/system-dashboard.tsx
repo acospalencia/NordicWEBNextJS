@@ -43,6 +43,7 @@ export function SystemDashboard({
   metrics,
   countCenters,
   viewerAccesses,
+  viewerFeatureAvailable,
 }: {
   users: PortalUser[];
   tickets: PortalTicket[];
@@ -56,6 +57,7 @@ export function SystemDashboard({
   };
   countCenters: readonly PeopleCounterCenterOption[];
   viewerAccesses: TicketViewerAccess[];
+  viewerFeatureAvailable: boolean;
 }) {
   const [tab, setTab] = useState<SystemTab>("usuarios");
   const [query, setQuery] = useState("");
@@ -168,6 +170,7 @@ export function SystemDashboard({
           <ViewerAccessPanel
             users={users}
             accesses={viewerAccesses}
+            featureAvailable={viewerFeatureAvailable}
             isPending={isPending}
             onSave={(formData) => runAction(saveTicketViewerAccess, formData)}
             onRevoke={(formData) => runAction(revokeTicketViewerAccess, formData)}
@@ -247,12 +250,14 @@ function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUs
 function ViewerAccessPanel({
   users,
   accesses,
+  featureAvailable,
   isPending,
   onSave,
   onRevoke,
 }: {
   users: PortalUser[];
   accesses: TicketViewerAccess[];
+  featureAvailable: boolean;
   isPending: boolean;
   onSave: (formData: FormData) => void;
   onRevoke: (formData: FormData) => void;
@@ -280,6 +285,22 @@ function ViewerAccessPanel({
         .toLowerCase()
         .includes(clientQuery.toLowerCase())
   );
+
+  if (!featureAvailable) {
+    return (
+      <div className="mt-5 rounded-xl border border-amber-400/25 bg-amber-400/10 p-6">
+        <div className="flex items-start gap-3">
+          <LockKeyhole className="mt-0.5 size-5 shrink-0 text-amber-300" />
+          <div>
+            <h2 className="font-semibold text-white">Configuración pendiente de API</h2>
+            <p className="mt-2 text-sm leading-6 text-amber-100/75">
+              La administración general continúa disponible, pero los permisos de visores se habilitarán cuando el nuevo endpoint sea publicado en el servidor.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">

@@ -21,16 +21,22 @@ export default async function PortalSystemPage() {
   if (session.role !== PORTAL_ROLES.ADMIN) redirect(getPortalHome(session.role));
   let data;
   let directory;
-  let viewerData;
+  let viewerData: Awaited<ReturnType<typeof getTicketViewerAdminData>> = {
+    accesses: [],
+  };
+  let viewerFeatureAvailable = true;
   try {
-    [data, directory, viewerData] = await Promise.all([
-      getSystemData(),
-      getAdminDirectory(),
-      getTicketViewerAdminData(),
-    ]);
+    [data, directory] = await Promise.all([getSystemData(), getAdminDirectory()]);
   } catch (error) {
     if (error instanceof PortalApiSessionError) redirect("/portal/cerrar-sesion");
     throw error;
+  }
+  try {
+    viewerData = await getTicketViewerAdminData();
+  } catch (error) {
+    if (error instanceof PortalApiSessionError) redirect("/portal/cerrar-sesion");
+    viewerFeatureAvailable = false;
+    console.error("La API de visores de tickets aún no está disponible:", error);
   }
   const countCenters = await getPeopleCounterCenterOptions();
   const clientsById = new Map(directory.clients.map((client) => [client.id_usuario, client]));
@@ -48,6 +54,7 @@ export default async function PortalSystemPage() {
         metrics={data.metrics}
         countCenters={countCenters}
         viewerAccesses={viewerData.accesses}
+        viewerFeatureAvailable={viewerFeatureAvailable}
       />
     </PortalShell>
   );
