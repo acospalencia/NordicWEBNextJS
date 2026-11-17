@@ -92,7 +92,7 @@ export async function loginPortal(
     if (!Number.isInteger(userId) || userId <= 0) {
       return failure("El servicio de acceso no devolvió un usuario válido.");
     }
-    if (![1, 2, 3, 4].includes(role)) return failure("La cuenta no tiene un rol válido.");
+    if (![1, 2, 3, 4, 5].includes(role)) return failure("La cuenta no tiene un rol válido.");
     await setPortalSession({
       userId,
       name: String(response.nombre ?? username),
@@ -103,7 +103,9 @@ export async function loginPortal(
     redirect(
       role === PORTAL_ROLES.COUNT_ADMIN
         ? "/conteo"
-        : countCenterSlug || role === PORTAL_ROLES.ADMIN
+        : countCenterSlug ||
+            role === PORTAL_ROLES.ADMIN ||
+            role === PORTAL_ROLES.TICKET_VIEWER
           ? "/portal/seleccionar-servicio"
           : getPortalHome(role),
     );
@@ -403,6 +405,59 @@ async function runSystemAction(payload: Record<string, unknown>, fallback: strin
   } catch (error) {
     return apiFailure(error);
   }
+}
+
+async function runTicketViewerAction(
+  payload: Record<string, unknown>,
+  fallback: string
+) {
+  const session = await requirePortalActionSession([PORTAL_ROLES.ADMIN]);
+  if (!session) return failure("Acceso denegado.");
+  try {
+    const response = await portalApiRequest<PortalApiEnvelope>(
+      "gestion_visores_tickets.php",
+      { method: "POST", json: payload }
+    );
+    const state = await stateFromApi(response, fallback);
+    if (state.status === "success") {
+      revalidatePath("/portal/administracion/sistema");
+    }
+    return state;
+  } catch (error) {
+    return apiFailure(error);
+  }
+}
+
+export async function saveTicketViewerAccess(
+  formData: FormData
+): Promise<PortalActionState> {
+  const viewerId = positiveInteger(formData, "id_viewer");
+  const clientIds = Array.from(
+    new Set(
+      formData
+        .getAll("client_ids")
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0 && id !== viewerId)
+    )
+  );
+  if (!viewerId || clientIds.length === 0) {
+    return failure("Seleccioná el usuario visor y al menos un cliente.");
+  }
+  return runTicketViewerAction(
+    { action: "save_access", id_viewer: viewerId, client_ids: clientIds },
+    "Permisos del visor guardados."
+  );
+}
+
+export async function revokeTicketViewerAccess(
+  formData: FormData
+): Promise<PortalActionState> {
+  const viewerId = positiveInteger(formData, "id_viewer");
+  if (!viewerId) return failure("El visor seleccionado no es válido.");
+  return runTicketViewerAction(
+    { action: "revoke_access", id_viewer: viewerId },
+    "Acceso de visor revocado."
+  );
 }
 
 export async function togglePortalUser(formData: FormData) {

@@ -32,7 +32,8 @@ export async function GET(request: Request) {
     const requestedCenter = normalizePeopleCounterCenterSlug(requestedCenterValue);
     const canSelectCenter =
       session.role === PORTAL_ROLES.ADMIN ||
-      session.role === PORTAL_ROLES.COUNT_ADMIN;
+      session.role === PORTAL_ROLES.COUNT_ADMIN ||
+      session.role === PORTAL_ROLES.TICKET_VIEWER;
     if (requestedCenterValue && !requestedCenter) {
       return NextResponse.json(
         { error: "El centro solicitado no es válido." },

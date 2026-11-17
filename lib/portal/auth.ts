@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { normalizePeopleCounterCenterSlug } from "@/lib/people-counter/centers";
 import { renewPortalApiSessionCookie } from "@/lib/portal/api";
 import {
+  PORTAL_ROLES,
   portalSessionMaxAgeSeconds,
   type PortalRole,
   type PortalSession,
@@ -45,7 +46,7 @@ function decodeSession(value: string): PortalSession | null {
       !Number.isInteger(session.userId) ||
       session.userId <= 0 ||
       !session.name ||
-      ![1, 2, 3, 4].includes(session.role) ||
+      ![1, 2, 3, 4, 5].includes(session.role) ||
       (session.countCenterSlug !== null &&
         normalizePeopleCounterCenterSlug(session.countCenterSlug) !== session.countCenterSlug) ||
       !Number.isFinite(session.lastActivity)
@@ -105,8 +106,9 @@ export async function requirePortalActionSession(roles?: PortalRole[]) {
 }
 
 export function getPortalHome(role: PortalRole) {
-  if (role === 3) return "/portal/administracion";
-  if (role === 2) return "/portal/tecnico";
-  if (role === 4) return "/conteo";
+  if (role === PORTAL_ROLES.ADMIN) return "/portal/administracion";
+  if (role === PORTAL_ROLES.TECHNICIAN) return "/portal/tecnico";
+  if (role === PORTAL_ROLES.COUNT_ADMIN) return "/conteo";
+  if (role === PORTAL_ROLES.TICKET_VIEWER) return "/portal/visor";
   return "/portal";
 }

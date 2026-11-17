@@ -2,24 +2,38 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Mail, Search, ShieldCheck, Ticket, UserCog, UserPlus } from "lucide-react";
+import {
+  Eye,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  Search,
+  ShieldCheck,
+  Ticket,
+  UserCog,
+  UserPlus,
+} from "lucide-react";
 import {
   editPortalTicket,
+  revokeTicketViewerAccess,
   savePortalUser,
+  saveTicketViewerAccess,
   togglePortalTicket,
   togglePortalUser,
 } from "@/app/portal/actions";
 import { ActionNotice, formatPortalDate, ticketStatusClass } from "@/components/portal/ticket-ui";
 import type { PeopleCounterCenterOption } from "@/lib/people-counter/centers";
 import {
+  PORTAL_ROLES,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
   type PortalEmailQueueItem,
   type PortalTicket,
   type PortalUser,
+  type TicketViewerAccess,
 } from "@/lib/portal/types";
 
-type SystemTab = "usuarios" | "tickets" | "correos";
+type SystemTab = "usuarios" | "visores" | "tickets" | "correos";
 type ActionResult = Promise<{ status: string; message?: string }>;
 
 export function SystemDashboard({
@@ -28,6 +42,7 @@ export function SystemDashboard({
   emails,
   metrics,
   countCenters,
+  viewerAccesses,
 }: {
   users: PortalUser[];
   tickets: PortalTicket[];
@@ -40,6 +55,7 @@ export function SystemDashboard({
     correos_pendientes: number;
   };
   countCenters: readonly PeopleCounterCenterOption[];
+  viewerAccesses: TicketViewerAccess[];
 }) {
   const [tab, setTab] = useState<SystemTab>("usuarios");
   const [query, setQuery] = useState("");
@@ -86,9 +102,10 @@ export function SystemDashboard({
           <Metric label="Correos pendientes" value={metrics.correos_pendientes} />
         </div>
 
-        <div className="mt-8 grid grid-cols-3 overflow-hidden rounded-lg border border-white/10 bg-[#0A1626]">
+        <div className="mt-8 grid grid-cols-2 overflow-hidden rounded-lg border border-white/10 bg-[#0A1626] sm:grid-cols-4">
           {([
             ["usuarios", "Usuarios", UserCog],
+            ["visores", "Visores", Eye],
             ["tickets", "Tickets", Ticket],
             ["correos", "Correos", Mail],
           ] as const).map(([key, label, Icon]) => (
@@ -98,7 +115,7 @@ export function SystemDashboard({
           ))}
         </div>
 
-        {tab !== "correos" && (
+        {(tab === "usuarios" || tab === "tickets") && (
           <label className="relative mt-5 block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} className="portal-input portal-input-icon" placeholder={tab === "usuarios" ? "Buscar usuario, correo o identificador…" : "Buscar ticket, cliente o técnico…"} />
@@ -130,7 +147,13 @@ export function SystemDashboard({
                     </div>
                   </div>
                 </summary>
-                <UserForm user={user} countCenters={countCenters} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
+                {user.id_rol === PORTAL_ROLES.TICKET_VIEWER ? (
+                  <div className="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-4 text-xs leading-5 text-[#94A3B8]">
+                    Esta cuenta usa el perfil combinado de conteo y consulta de tickets. Administrá sus clientes autorizados desde la pestaña <strong className="text-cyan-200">Visores</strong>.
+                  </div>
+                ) : (
+                  <UserForm user={user} countCenters={countCenters} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
+                )}
                 <form action={(formData) => runAction(togglePortalUser, formData)} className="mt-4 border-t border-white/10 pt-4">
                   <input type="hidden" name="id_usuario" value={user.id_usuario} />
                   <input type="hidden" name="activo" value={user.activo ? "0" : "1"} />
@@ -139,6 +162,16 @@ export function SystemDashboard({
               </details>
             ))}
           </div>
+        )}
+
+        {tab === "visores" && (
+          <ViewerAccessPanel
+            users={users}
+            accesses={viewerAccesses}
+            isPending={isPending}
+            onSave={(formData) => runAction(saveTicketViewerAccess, formData)}
+            onRevoke={(formData) => runAction(revokeTicketViewerAccess, formData)}
+          />
         )}
 
         {tab === "tickets" && (
@@ -211,6 +244,184 @@ function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUs
   );
 }
 
+function ViewerAccessPanel({
+  users,
+  accesses,
+  isPending,
+  onSave,
+  onRevoke,
+}: {
+  users: PortalUser[];
+  accesses: TicketViewerAccess[];
+  isPending: boolean;
+  onSave: (formData: FormData) => void;
+  onRevoke: (formData: FormData) => void;
+}) {
+  const candidates = users.filter(
+    (user) =>
+      user.activo === 1 &&
+      (user.id_rol === PORTAL_ROLES.COUNT_ADMIN ||
+        user.id_rol === PORTAL_ROLES.TICKET_VIEWER)
+  );
+  const initialViewerId = accesses[0]?.viewerId ?? candidates[0]?.id_usuario ?? 0;
+  const [viewerId, setViewerId] = useState(initialViewerId);
+  const [clientQuery, setClientQuery] = useState("");
+  const [selectedClientIds, setSelectedClientIds] = useState<number[]>(
+    accesses.find((access) => access.viewerId === initialViewerId)?.clientIds ?? []
+  );
+  const selectedViewer = candidates.find((user) => user.id_usuario === viewerId);
+  const selectedAccess = accesses.find((access) => access.viewerId === viewerId);
+  const clients = users.filter(
+    (user) =>
+      user.activo === 1 &&
+      user.id_rol === PORTAL_ROLES.CLIENT &&
+      user.id_usuario !== viewerId &&
+      `${user.nombre} ${user.email} ${user.codigo_empresa ?? ""}`
+        .toLowerCase()
+        .includes(clientQuery.toLowerCase())
+  );
+
+  return (
+    <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="h-fit rounded-xl border border-white/10 bg-[#0A1626] p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
+            <LockKeyhole className="size-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-white">Perfil combinado</h2>
+            <p className="mt-1 text-xs leading-5 text-[#94A3B8]">
+              La cuenta tendrá acceso completo al conteo y lectura de tickets de los clientes seleccionados.
+            </p>
+          </div>
+        </div>
+
+        <label className="mt-6 block">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">
+            Usuario visor
+          </span>
+          <select
+            value={viewerId || ""}
+            onChange={(event) => {
+              const nextViewerId = Number(event.target.value);
+              setViewerId(nextViewerId);
+              setSelectedClientIds(
+                accesses.find((access) => access.viewerId === nextViewerId)?.clientIds ?? []
+              );
+              setClientQuery("");
+            }}
+            className="portal-input mt-2"
+          >
+            {!candidates.length && <option value="">No hay cuentas disponibles</option>}
+            {candidates.map((user) => (
+              <option key={user.id_usuario} value={user.id_usuario}>
+                {user.nombre} — {user.id_rol === PORTAL_ROLES.TICKET_VIEWER ? "Perfil combinado" : "Administrador de conteo"}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {selectedViewer && (
+          <div className="mt-4 rounded-lg border border-white/8 bg-[#07111F] p-4 text-xs text-[#94A3B8]">
+            <p className="font-semibold text-white">{selectedViewer.nombre}</p>
+            <p className="mt-1">{selectedViewer.email}</p>
+            <p className="mt-3 leading-5">
+              {selectedViewer.id_rol === PORTAL_ROLES.TICKET_VIEWER
+                ? "Actualizá su lista de clientes o revocá el perfil combinado."
+                : "Al guardar, esta cuenta conservará la administración de conteo y añadirá la consulta de tickets autorizados."}
+            </p>
+          </div>
+        )}
+
+        {selectedViewer?.id_rol === PORTAL_ROLES.TICKET_VIEWER && (
+          <form action={onRevoke} className="mt-4 border-t border-white/10 pt-4">
+            <input type="hidden" name="id_viewer" value={viewerId} />
+            <button
+              disabled={isPending}
+              className="text-xs font-semibold text-rose-300 transition-colors hover:text-rose-200 disabled:opacity-50"
+            >
+              Revocar perfil combinado
+            </button>
+          </form>
+        )}
+      </div>
+
+      <form
+        key={`${viewerId}:${selectedAccess?.clientIds.join(",") ?? "new"}`}
+        action={onSave}
+        className="rounded-xl border border-white/10 bg-[#0A1626] p-5 sm:p-6"
+      >
+        <input type="hidden" name="id_viewer" value={viewerId || ""} />
+        {selectedClientIds.map((clientId) => (
+          <input key={clientId} type="hidden" name="client_ids" value={clientId} />
+        ))}
+        <div className="flex flex-col justify-between gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="font-semibold text-white">Clientes visibles</h2>
+            <p className="mt-1 text-xs text-[#94A3B8]">
+              Seleccioná exactamente las cuentas cuyos tickets podrá consultar.
+            </p>
+          </div>
+          <span className="w-fit rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-3 py-1 text-[10px] font-semibold uppercase text-[#60A5FA]">
+            Solo lectura
+          </span>
+        </div>
+
+        <label className="relative mt-5 block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
+          <input
+            value={clientQuery}
+            onChange={(event) => setClientQuery(event.target.value)}
+            className="portal-input portal-input-icon"
+            placeholder="Buscar cliente por nombre, correo o identificador…"
+          />
+        </label>
+
+        <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1">
+          {clients.length ? (
+            clients.map((client) => (
+              <label
+                key={client.id_usuario}
+                className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/8 bg-[#07111F] p-3.5 transition-colors hover:border-[#3B82F6]/35"
+              >
+                <input
+                  type="checkbox"
+                  value={client.id_usuario}
+                  checked={selectedClientIds.includes(client.id_usuario)}
+                  onChange={(event) => {
+                    setSelectedClientIds((current) =>
+                      event.target.checked
+                        ? [...current, client.id_usuario]
+                        : current.filter((id) => id !== client.id_usuario)
+                    );
+                  }}
+                  className="mt-0.5 size-4 accent-[#3B82F6]"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-white">{client.nombre}</span>
+                  <span className="mt-1 block truncate text-[10px] text-[#64748B]">{client.email}</span>
+                </span>
+              </label>
+            ))
+          ) : (
+            <p className="rounded-lg border border-dashed border-white/10 p-8 text-center text-xs text-[#64748B]">
+              No se encontraron clientes disponibles.
+            </p>
+          )}
+        </div>
+
+        <button
+          disabled={isPending || !viewerId || selectedClientIds.length === 0}
+          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#3B82F6] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#60A5FA] disabled:opacity-50"
+        >
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+          Guardar permisos
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function SystemField({ label, children }: { label: string; children: React.ReactNode }) {
   return <label><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">{label}</span><span className="mt-2 block">{children}</span></label>;
 }
@@ -222,6 +433,7 @@ function Metric({ label, value }: { label: string; value: number }) {
 function roleName(role: number) {
   if (role === 3) return "Administrador";
   if (role === 4) return "Administrador de conteo";
+  if (role === 5) return "Visor de tickets y conteo";
   if (role === 2) return "Técnico";
   return "Cliente";
 }

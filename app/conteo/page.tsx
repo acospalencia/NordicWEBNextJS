@@ -19,7 +19,8 @@ export default async function ConteoPage() {
   if (!session) redirect("/portal/iniciar-sesion");
   const canSelectCenter =
     session.role === PORTAL_ROLES.ADMIN ||
-    session.role === PORTAL_ROLES.COUNT_ADMIN;
+    session.role === PORTAL_ROLES.COUNT_ADMIN ||
+    session.role === PORTAL_ROLES.TICKET_VIEWER;
   if (!session.countCenterSlug && !canSelectCenter) {
     redirect(getPortalHome(session.role));
   }

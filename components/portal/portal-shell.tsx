@@ -11,6 +11,7 @@ const ROLE_NAMES = {
   [PORTAL_ROLES.TECHNICIAN]: "Técnico",
   [PORTAL_ROLES.ADMIN]: "Administrador",
   [PORTAL_ROLES.COUNT_ADMIN]: "Administrador de conteo",
+  [PORTAL_ROLES.TICKET_VIEWER]: "Visor de tickets y conteo",
 };
 
 export function PortalShell({
@@ -46,7 +47,8 @@ export function PortalShell({
           <nav className="flex items-center gap-2" aria-label="Navegación del portal">
             {(session.countCenterSlug ||
               session.role === PORTAL_ROLES.ADMIN ||
-              session.role === PORTAL_ROLES.COUNT_ADMIN) && (
+              session.role === PORTAL_ROLES.COUNT_ADMIN ||
+              session.role === PORTAL_ROLES.TICKET_VIEWER) && (
               <Link
                 href="/conteo"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"
@@ -79,6 +81,15 @@ export function PortalShell({
                   <span className="hidden md:inline">Sistema</span>
                 </Link>
               </>
+            )}
+            {session.role === PORTAL_ROLES.TICKET_VIEWER && (
+              <Link
+                href="/portal/visor"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold text-[#CBD5E1] transition-colors hover:border-[#3B82F6]/40 hover:text-white"
+              >
+                <TicketCheck className="size-4" />
+                <span className="hidden md:inline">Tickets autorizados</span>
+              </Link>
             )}
             <form action={logoutPortal}>
               <button

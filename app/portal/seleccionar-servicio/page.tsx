@@ -19,7 +19,9 @@ export default async function ServiceSelectorPage() {
   const session = await getValidatedPortalSession();
   if (!session) redirect("/portal/iniciar-sesion");
   if (session.role === PORTAL_ROLES.COUNT_ADMIN) redirect("/conteo");
-  const canSelectCenter = session.role === PORTAL_ROLES.ADMIN;
+  const canSelectCenter =
+    session.role === PORTAL_ROLES.ADMIN ||
+    session.role === PORTAL_ROLES.TICKET_VIEWER;
   if (!session.countCenterSlug && !canSelectCenter) {
     redirect(getPortalHome(session.role));
   }
@@ -67,7 +69,11 @@ export default async function ServiceSelectorPage() {
               icon={TicketCheck}
               eyebrow="Soporte"
               title="Tickets de soporte"
-              description="Crea solicitudes y consulta el seguimiento de los servicios técnicos."
+              description={
+                session.role === PORTAL_ROLES.TICKET_VIEWER
+                  ? "Consulta en modo de solo lectura los tickets de los clientes autorizados."
+                  : "Crea solicitudes y consulta el seguimiento de los servicios técnicos."
+              }
               accent="cyan"
             />
           </div>

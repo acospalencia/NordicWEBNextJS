@@ -5,6 +5,7 @@ import type {
   PortalEmailQueueItem,
   PortalTicket,
   PortalUser,
+  TicketViewerAccess,
   TicketPriority,
   TicketStatus,
 } from "@/lib/portal/types";
@@ -93,6 +94,42 @@ export async function getAdminDirectory() {
   return {
     clients: array(clientsResponse.data).map(normalizeApiUser),
     technicians: array(techniciansResponse.data).map(normalizeApiUser),
+  };
+}
+
+export async function getTicketViewerAdminData(): Promise<{
+  accesses: TicketViewerAccess[];
+}> {
+  const response = await portalApiRequest<PortalApiEnvelope>(
+    "gestion_visores_tickets.php",
+    { searchParams: { action: "admin" } }
+  );
+  assertPortalApiSuccess(response);
+  const data = (response.data ?? {}) as ApiRecord;
+  const accesses = array(data.viewers).flatMap<TicketViewerAccess>((row) => {
+    const viewerId = Number(row.id_usuario);
+    if (!Number.isInteger(viewerId) || viewerId <= 0) return [];
+    const clientIds = Array.isArray(row.client_ids)
+      ? row.client_ids
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+    return [{ viewerId, clientIds }];
+  });
+  return { accesses };
+}
+
+export async function getTicketViewerData() {
+  const response = await portalApiRequest<PortalApiEnvelope>(
+    "gestion_visores_tickets.php",
+    { searchParams: { action: "viewer" } }
+  );
+  assertPortalApiSuccess(response);
+  const data = (response.data ?? {}) as ApiRecord;
+  return {
+    name: String(data.viewer_name ?? "Visor de tickets"),
+    clients: array(data.clients).map(normalizeApiUser),
+    tickets: array(data.tickets).map(normalizeApiTicket),
   };
 }
 

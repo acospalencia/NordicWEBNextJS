@@ -5,7 +5,11 @@ import { SystemDashboard } from "@/components/portal/system-dashboard";
 import { getPeopleCounterCenterOptions } from "@/lib/people-counter/api";
 import { getPortalHome, getValidatedPortalSession } from "@/lib/portal/auth";
 import { PortalApiSessionError } from "@/lib/portal/api";
-import { getAdminDirectory, getSystemData } from "@/lib/portal/data";
+import {
+  getAdminDirectory,
+  getSystemData,
+  getTicketViewerAdminData,
+} from "@/lib/portal/data";
 import { PORTAL_ROLES } from "@/lib/portal/types";
 
 export const metadata: Metadata = { title: "Administración del sistema — Portal Nordictech" };
@@ -17,8 +21,13 @@ export default async function PortalSystemPage() {
   if (session.role !== PORTAL_ROLES.ADMIN) redirect(getPortalHome(session.role));
   let data;
   let directory;
+  let viewerData;
   try {
-    [data, directory] = await Promise.all([getSystemData(), getAdminDirectory()]);
+    [data, directory, viewerData] = await Promise.all([
+      getSystemData(),
+      getAdminDirectory(),
+      getTicketViewerAdminData(),
+    ]);
   } catch (error) {
     if (error instanceof PortalApiSessionError) redirect("/portal/cerrar-sesion");
     throw error;
@@ -38,6 +47,7 @@ export default async function PortalSystemPage() {
         emails={data.emails}
         metrics={data.metrics}
         countCenters={countCenters}
+        viewerAccesses={viewerData.accesses}
       />
     </PortalShell>
   );

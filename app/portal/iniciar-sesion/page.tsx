@@ -19,7 +19,9 @@ export default async function PortalLoginPage() {
     redirect(
       session.role === PORTAL_ROLES.COUNT_ADMIN
         ? "/conteo"
-        : session.countCenterSlug || session.role === PORTAL_ROLES.ADMIN
+        : session.countCenterSlug ||
+            session.role === PORTAL_ROLES.ADMIN ||
+            session.role === PORTAL_ROLES.TICKET_VIEWER
           ? "/portal/seleccionar-servicio"
           : getPortalHome(session.role),
     );

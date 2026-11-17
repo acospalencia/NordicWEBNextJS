@@ -3,6 +3,7 @@ export const PORTAL_ROLES = {
   TECHNICIAN: 2,
   ADMIN: 3,
   COUNT_ADMIN: 4,
+  TICKET_VIEWER: 5,
 } as const;
 
 export type PortalRole = (typeof PORTAL_ROLES)[keyof typeof PORTAL_ROLES];
@@ -79,4 +80,9 @@ export type PortalEmailQueueItem = {
   intentos: number;
   fecha_registro: string | null;
   fecha_envio: string | null;
+};
+
+export type TicketViewerAccess = {
+  viewerId: number;
+  clientIds: number[];
 };

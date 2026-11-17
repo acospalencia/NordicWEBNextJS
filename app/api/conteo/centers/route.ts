@@ -26,7 +26,8 @@ export async function GET() {
     }
     if (
       session.role !== PORTAL_ROLES.ADMIN &&
-      session.role !== PORTAL_ROLES.COUNT_ADMIN
+      session.role !== PORTAL_ROLES.COUNT_ADMIN &&
+      session.role !== PORTAL_ROLES.TICKET_VIEWER
     ) {
       return NextResponse.json(
         { error: "Tu cuenta no puede consultar todos los centros." },
