@@ -141,7 +141,7 @@ export function SystemDashboard({
                       <p className="mt-1 text-xs text-[#94A3B8]">{user.email}</p>
                     </div>
                     <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase">
-                      <span className="rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-2.5 py-1 text-[#60A5FA]">{roleName(user.id_rol)}</span>
+                      <span className="rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-2.5 py-1 text-[#60A5FA]">{roleName(user.id_rol, viewerAccesses.some((access) => access.viewerId === user.id_usuario))}</span>
                       <span className={`rounded-full border px-2.5 py-1 ${user.verificado ? "border-emerald-500/25 text-emerald-300" : "border-amber-500/25 text-amber-300"}`}>{user.verificado ? "Verificado" : "Pendiente"}</span>
                       <span className="rounded-full border border-white/10 px-2.5 py-1 text-[#94A3B8]">{user.activo ? "Activo" : "Inactivo"}</span>
                       {user.id_rol === 1 && user.codigo_empresa && <span className="rounded-full border border-violet-400/25 bg-violet-400/10 px-2.5 py-1 font-mono text-violet-200">ID: {user.codigo_empresa}</span>}
@@ -149,7 +149,7 @@ export function SystemDashboard({
                     </div>
                   </div>
                 </summary>
-                {user.id_rol === PORTAL_ROLES.TICKET_VIEWER ? (
+                {viewerAccesses.some((access) => access.viewerId === user.id_usuario) ? (
                   <div className="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-4 text-xs leading-5 text-[#94A3B8]">
                     Esta cuenta usa el perfil combinado de conteo y consulta de tickets. Administrá sus clientes autorizados desde la pestaña <strong className="text-cyan-200">Visores</strong>.
                   </div>
@@ -336,7 +336,7 @@ function ViewerAccessPanel({
             {!candidates.length && <option value="">No hay cuentas disponibles</option>}
             {candidates.map((user) => (
               <option key={user.id_usuario} value={user.id_usuario}>
-                {user.nombre} — {user.id_rol === PORTAL_ROLES.TICKET_VIEWER ? "Perfil combinado" : "Administrador de conteo"}
+                {user.nombre} — {accesses.some((access) => access.viewerId === user.id_usuario) ? "Perfil combinado" : "Administrador de conteo"}
               </option>
             ))}
           </select>
@@ -347,14 +347,14 @@ function ViewerAccessPanel({
             <p className="font-semibold text-white">{selectedViewer.nombre}</p>
             <p className="mt-1">{selectedViewer.email}</p>
             <p className="mt-3 leading-5">
-              {selectedViewer.id_rol === PORTAL_ROLES.TICKET_VIEWER
+              {selectedAccess
                 ? "Actualizá su lista de clientes o revocá el perfil combinado."
                 : "Al guardar, esta cuenta conservará la administración de conteo y añadirá la consulta de tickets autorizados."}
             </p>
           </div>
         )}
 
-        {selectedViewer?.id_rol === PORTAL_ROLES.TICKET_VIEWER && (
+        {selectedViewer && selectedAccess && (
           <form action={onRevoke} className="mt-4 border-t border-white/10 pt-4">
             <input type="hidden" name="id_viewer" value={viewerId} />
             <button
@@ -451,7 +451,8 @@ function Metric({ label, value }: { label: string; value: number }) {
   return <article className="rounded-xl border border-white/10 bg-[#0A1626] p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#94A3B8]">{label}</p><p className="mt-2 text-2xl font-semibold text-[#60A5FA]">{value}</p></article>;
 }
 
-function roleName(role: number) {
+function roleName(role: number, hasViewerAccess = false) {
+  if (hasViewerAccess) return "Visor de tickets y conteo";
   if (role === 3) return "Administrador";
   if (role === 4) return "Administrador de conteo";
   if (role === 5) return "Visor de tickets y conteo";

@@ -85,7 +85,7 @@ export async function loginPortal(
     }
 
     const userId = Number(response.id_usuario);
-    const role = Number(response.id_rol) as PortalRole;
+    const role = Number(response.portal_id_rol ?? response.id_rol) as PortalRole;
     const countCenterSlug = normalizePeopleCounterCenterSlug(
       response.conteo_center_slug,
     );
