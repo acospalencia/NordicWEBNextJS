@@ -42,6 +42,7 @@ export type PortalUser = {
   id_usuario: number;
   nombre: string;
   email: string;
+  telefono?: string | null;
   id_rol: PortalRole;
   verificado: number;
   activo: number;

@@ -49,6 +49,7 @@ function normalizeApiUser(row: ApiRecord): PortalUser {
     id_usuario: Number(row.id_usuario),
     nombre: String(row.nombre ?? ""),
     email: String(row.email ?? ""),
+    telefono: row.telefono ? String(row.telefono) : null,
     id_rol: Number(row.id_rol ?? 1) as PortalUser["id_rol"],
     verificado: Number(row.verificado ?? 0),
     activo: Number(row.activo ?? 1),

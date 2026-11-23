@@ -474,6 +474,7 @@ export async function togglePortalUser(formData: FormData) {
 export async function savePortalUser(formData: FormData): Promise<PortalActionState> {
   const name = value(formData, "nombre");
   const email = value(formData, "email").toLowerCase();
+  const phone = value(formData, "telefono");
   const role = Number(value(formData, "id_rol"));
   const password = String(formData.get("password") ?? "");
   const identifier = value(formData, "codigo_empresa").toUpperCase();
@@ -483,12 +484,16 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
   if (identifier && !/^[A-Z0-9_-]{2,64}$/.test(identifier)) {
     return failure("El identificador solo puede incluir letras, números, guiones y guion bajo.");
   }
+  if (phone.length > 32) {
+    return failure("El teléfono debe tener como máximo 32 caracteres.");
+  }
   return runSystemAction(
     {
       action: "guardar_usuario",
       id_usuario: Number(value(formData, "id_usuario")) || 0,
       nombre: name,
       email,
+      ...(formData.has("telefono") ? { telefono: phone } : {}),
       id_rol: role,
       codigo_empresa: role === PORTAL_ROLES.CLIENT ? identifier : "",
       conteo_center_slug: value(formData, "conteo_center_slug"),
@@ -496,6 +501,19 @@ export async function savePortalUser(formData: FormData): Promise<PortalActionSt
       password,
     },
     "Usuario guardado."
+  );
+}
+
+export async function savePortalUserPhone(formData: FormData): Promise<PortalActionState> {
+  const userId = positiveInteger(formData, "id_usuario");
+  const phone = value(formData, "telefono");
+  if (!userId) return failure("El usuario no es válido.");
+  if (phone.length > 32) {
+    return failure("El teléfono debe tener como máximo 32 caracteres.");
+  }
+  return runSystemAction(
+    { action: "guardar_telefono_usuario", id_usuario: userId, telefono: phone },
+    "Teléfono actualizado."
   );
 }
 

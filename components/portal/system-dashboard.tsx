@@ -17,6 +17,7 @@ import {
   editPortalTicket,
   revokeTicketViewerAccess,
   savePortalUser,
+  savePortalUserPhone,
   saveTicketViewerAccess,
   togglePortalTicket,
   togglePortalUser,
@@ -67,7 +68,7 @@ export function SystemDashboard({
   const technicians = users.filter((user) => user.id_rol === 2 && user.activo === 1);
 
   const visibleUsers = useMemo(
-    () => users.filter((user) => `${user.nombre} ${user.email} ${user.codigo_empresa ?? ""}`.toLowerCase().includes(query.toLowerCase())),
+    () => users.filter((user) => `${user.nombre} ${user.email} ${user.telefono ?? ""} ${user.codigo_empresa ?? ""}`.toLowerCase().includes(query.toLowerCase())),
     [query, users]
   );
   const visibleTickets = useMemo(
@@ -120,7 +121,7 @@ export function SystemDashboard({
         {(tab === "usuarios" || tab === "tickets") && (
           <label className="relative mt-5 block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} className="portal-input portal-input-icon" placeholder={tab === "usuarios" ? "Buscar usuario, correo o identificador…" : "Buscar ticket, cliente o técnico…"} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} className="portal-input portal-input-icon" placeholder={tab === "usuarios" ? "Buscar usuario, correo, teléfono o identificador…" : "Buscar ticket, cliente o técnico…"} />
           </label>
         )}
 
@@ -139,6 +140,7 @@ export function SystemDashboard({
                     <div>
                       <h3 className="text-sm font-semibold text-white">{user.nombre}</h3>
                       <p className="mt-1 text-xs text-[#94A3B8]">{user.email}</p>
+                      <p className="mt-1 text-xs text-[#94A3B8]">Teléfono: {user.telefono || "Sin asignar"}</p>
                     </div>
                     <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase">
                       <span className="rounded-full border border-[#3B82F6]/25 bg-[#3B82F6]/10 px-2.5 py-1 text-[#60A5FA]">{roleName(user.id_rol, viewerAccesses.some((access) => access.viewerId === user.id_usuario))}</span>
@@ -152,6 +154,11 @@ export function SystemDashboard({
                 {viewerAccesses.some((access) => access.viewerId === user.id_usuario) ? (
                   <div className="mt-5 rounded-lg border border-cyan-400/20 bg-cyan-400/5 p-4 text-xs leading-5 text-[#94A3B8]">
                     Esta cuenta usa el perfil combinado de conteo y consulta de tickets. Administrá sus clientes autorizados desde la pestaña <strong className="text-cyan-200">Visores</strong>.
+                    <form action={(formData) => runAction(savePortalUserPhone, formData)} className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                      <input type="hidden" name="id_usuario" value={user.id_usuario} />
+                      <UserPhoneField user={user} />
+                      <button disabled={isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#3B82F6] px-4 text-xs font-semibold text-white hover:bg-[#60A5FA] disabled:opacity-50">{isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} Guardar teléfono</button>
+                    </form>
                   </div>
                 ) : (
                   <UserForm user={user} countCenters={countCenters} isPending={isPending} onAction={(formData) => runAction(savePortalUser, formData)} />
@@ -233,10 +240,11 @@ export function SystemDashboard({
 
 function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUser; countCenters: readonly PeopleCounterCenterOption[]; isPending: boolean; onAction: (formData: FormData) => void }) {
   return (
-    <form action={onAction} className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-8 xl:items-end">
+    <form action={onAction} className="mt-5 grid gap-3 border-t border-white/10 pt-5 md:grid-cols-2 xl:grid-cols-3 xl:items-end">
       <input type="hidden" name="id_usuario" value={user?.id_usuario ?? ""} />
       <SystemField label="Nombre"><input name="nombre" defaultValue={user?.nombre} required className="portal-input" /></SystemField>
       <SystemField label="Correo"><input name="email" type="email" defaultValue={user?.email} required className="portal-input" /></SystemField>
+      <UserPhoneField user={user} />
       <SystemField label="Rol"><select name="id_rol" defaultValue={user?.id_rol ?? 1} className="portal-input"><option value="1">Cliente</option><option value="2">Técnico</option><option value="3">Administrador</option><option value="4">Administrador de conteo</option></select></SystemField>
       <SystemField label="Identificador (clientes)"><input name="codigo_empresa" defaultValue={user?.codigo_empresa ?? ""} className="portal-input uppercase" maxLength={64} pattern="[A-Za-z0-9_-]{2,64}" placeholder="Ej. GRUPO-NORTE" /></SystemField>
       <SystemField label="Centro de conteo"><select name="conteo_center_slug" defaultValue={user?.conteo_center_slug ?? ""} className="portal-input"><option value="">Sin acceso</option>{countCenters.map((center) => <option key={center.slug} value={center.slug}>{center.name}</option>)}</select></SystemField>
@@ -245,6 +253,10 @@ function UserForm({ user, countCenters, isPending, onAction }: { user?: PortalUs
       <button disabled={isPending} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#3B82F6] px-4 text-xs font-semibold text-white hover:bg-[#60A5FA] disabled:opacity-50">{isPending ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />} Guardar</button>
     </form>
   );
+}
+
+function UserPhoneField({ user }: { user?: PortalUser }) {
+  return <SystemField label="Teléfono (opcional)"><input name="telefono" type="tel" defaultValue={user?.telefono ?? ""} maxLength={32} autoComplete="tel" className="portal-input" placeholder="Ej. +503 7000-0000" /></SystemField>;
 }
 
 function ViewerAccessPanel({

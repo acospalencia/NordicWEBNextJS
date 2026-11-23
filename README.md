@@ -124,6 +124,15 @@ de Bluehost; conserva `PHPSESSID` en una cookie HTTP-only del dominio desplegado
 expone las credenciales de MySQL. Las cuentas, recuperación, tickets, asignaciones,
 bitácoras, estados y correos continúan siendo procesados por el backend PHP existente.
 
+En **Administración → Sistema → Usuarios**, el campo **Teléfono (opcional)**
+permite al administrador asignar, editar o borrar el número, incluso para cuentas
+con perfil combinado de conteo y tickets. Puede quedar vacío al crear una cuenta
+y no aparece en el registro público. La API `gestion_sistema.php` debe incluir
+el teléfono al consultar y guardar usuarios, y la base de datos debe tener la
+columna nullable `usuarios.telefono VARCHAR(32)`. La migración y el endpoint se
+mantienen en el proyecto backend `LandingPageNordictech`; la interfaz se publica
+desde este proyecto Next.js en Vercel.
+
 ## Formulario de contacto
 
 `components/contact-form.tsx` usa el Server Action `sendContactMessage` (`app/actions.ts`)
